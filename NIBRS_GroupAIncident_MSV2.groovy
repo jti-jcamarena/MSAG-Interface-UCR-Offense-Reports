@@ -16,7 +16,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 
 /**
- lastUpdated:01/10/2024 12:36
+ lastUpdated:01/18/2024 08:16
  *Need an ORI number for this agency and lea's
  *https://journaltech.sharepoint.com/:x:/s/MississippiAG/EegY8NK6owBEmQV-Z29xNh4BvLjC4KmD0-CsZNgnbsQu1w?e=grZ56N
  *
@@ -564,8 +564,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
                 fileWriter.println("<j:IncidentAugmentation>");
                 //<!-- Element 4, Cleared Exceptionally -->
                 String incidentExceptionalClearanceCodeValue = offense.cf_indicentExceptionalClear != null && !offense.cf_indicentExceptionalClear.isEmpty() ? offense.cf_indicentExceptionalClear : incidentExceptionalClearanceCode[5];
-                //if (["JUSTIFIABLE_HOMICIDE"].contains(getOffenseUCRCode(offense))){
-                if(Collections.disjoint(["JUSTIFIABLE_HOMICIDE"], getUCROffenses(relatedCharges)) == false){
+                if (["JUSTIFIABLE_HOMICIDE"].contains(getOffenseUCRCode(offense))){
                     incidentExceptionalClearanceCodeValue = "N";
                 }
                 fileWriter.println("<j:IncidentExceptionalClearanceCode>${incidentExceptionalClearanceCodeValue}</j:IncidentExceptionalClearanceCode>");
@@ -647,8 +646,8 @@ internalTesting != "true" ?: logger.debug(ucrs);
                     criminalActivityCategoryCode = relatedOffenseUCRCode == weaponsOfMassDestruction ? "T" : criminalActivityCategoryCode;
                     //internalTesting != "true" ?: logger.debug("criminalActivityCategoryCode:${criminalActivityCategoryCode}");
                     //internalTesting != "true" ?: logger.debug("condition: !criminalActivityCategoryCode.isEmpty():${!criminalActivityCategoryCode.isEmpty()}; contains:${offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent.contains(offenseUCRCode)}");
-                    if (!criminalActivityCategoryCode.isEmpty() && offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent.contains(relatedOffenseUCRCode)){
-                        //if (!criminalActivityCategoryCode.isEmpty() && Collections.disjoint( offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent, getUCROffenses(relatedCharges)) == false){
+                    //if (!criminalActivityCategoryCode.isEmpty() && offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent.contains(relatedOffenseUCRCode)){
+                    if (!criminalActivityCategoryCode.isEmpty() && Collections.disjoint( offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent, getUCROffenses(relatedCharges)) == false){
                         internalTesting != "true" ?: logger.debug("OPTION:<nibrs:CriminalActivityCategoryCode>${relatedOffense.cf_criminalActivityCategory != null ? relatedOffense.cf_criminalActivityCategory :criminalActivityCategoryCode}");
                         fileWriter.println("<nibrs:CriminalActivityCategoryCode>${relatedOffense.cf_criminalActivityCategory != null ? relatedOffense.cf_criminalActivityCategory :criminalActivityCategoryCode}</nibrs:CriminalActivityCategoryCode>");
                     }
@@ -850,8 +849,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
                 fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}" + "'/>");
                 //<!-- Element 23, Victim Sequence Number -->
                 fileWriter.println("<j:VictimSequenceNumberText>${offenseVictimsArrayList.indexOf(victim) +1}</j:VictimSequenceNumberText>");
-                //if (["100", "11A", "11B", "11C", "11D", "120", "13A", "13B", "210", "64A", "64B"].contains(offensesMap.get(getOffenseUCRCode(offense)))){
-                if(Collections.disjoint(["100", "11A", "11B", "11C", "11D", "120", "13A", "13B", "210", "64A", "64B"], getUCROffenses(relatedCharges)) == false){
+                if (["100", "11A", "11B", "11C", "11D", "120", "13A", "13B", "210", "64A", "64B"].contains(offensesMap.get(getOffenseUCRCode(offense)))){
                     //  <!-- Element 33, Type Injury -->
                     fileWriter.println("<j:VictimInjury>");
                     fileWriter.println("<j:InjuryCategoryCode>N</j:InjuryCategoryCode>");
@@ -865,11 +863,9 @@ internalTesting != "true" ?: logger.debug(ucrs);
                 victimCategoryCode = offenseUCRCodeRequiredWhenVictimTypeG.contains(getOffenseUCRCode(relatedCharges.first())) == true ? "G" : victimCategoryCode;
 
                 fileWriter.println("<j:VictimCategoryCode>${victimCategoryCode}</j:VictimCategoryCode>");
-                //if (["09A","09B","09C","13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))){
-                if( Collections.disjoint(["09A","09B","09C","13A"], getUCROffenses(relatedCharges)) == false){
+                if (["09A","09B","09C","13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))){
                     String victimAggravatedAssaultHomicideFactorCode = "";
                     if (["09A", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))){
-                        if
                         victimAggravatedAssaultHomicideFactorCode = "10";
                     } else if (["09B"].contains(offensesMap.get(getOffenseUCRCode(offense)))){
                         victimAggravatedAssaultHomicideFactorCode = "34";
