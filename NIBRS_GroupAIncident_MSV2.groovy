@@ -16,7 +16,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 
 /**
- lastUpdated:01/18/2024 08:16
+ lastUpdated:01/18/2024 10:04
  *Need an ORI number for this agency and lea's
  *https://journaltech.sharepoint.com/:x:/s/MississippiAG/EegY8NK6owBEmQV-Z29xNh4BvLjC4KmD0-CsZNgnbsQu1w?e=grZ56N
  *
@@ -715,8 +715,8 @@ internalTesting != "true" ?: logger.debug(ucrs);
               }
                 throw new Exception("testing")*/
 
-                for (relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it))}))){
-                    //for (relatedOffense in relatedCharges){
+                //for (relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it))}))){
+                 for (relatedOffense in relatedCharges){
                     internalTesting != "true" ?: logger.debug("inside loop: " + getItemStatus(relatedOffense));
                     String offenseUCRCodeRelatedOffense = getOffenseUCRCode(relatedOffense);
                     internalTesting != "true" ?: logger.debug("offenseUCRCodeRelatedOffense:${getOffenseUCRCode(relatedOffense)}");
