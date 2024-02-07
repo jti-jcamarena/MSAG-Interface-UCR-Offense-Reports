@@ -40,54 +40,55 @@ def ArrayList<String> homicideOffenses = Arrays.asList("MANSLAUGHTER_NONNEGLIGEN
 def Map offensesMap = new HashMap();
 //GROUP A OFFENSES
 //crimes against person
-offensesMap.put("AGGRAVATED_ASSAULT", "13A");//tested
-offensesMap.put("ASSAULT-SIMPLE", "13B");//tested
-offensesMap.put("JUSTIFIABLE_HOMICIDE", "09C");//tested
-offensesMap.put("MANSLAUGHTER_NONNEGLIGENT-MURDER", "09A");//tested
-offensesMap.put("INTIMIDATION", "13C");//tested
-
-offensesMap.put("MANSLAUGHTER_NEGLIGENT", "09B");//tested
-offensesMap.put("HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS", "64A");//tested
-offensesMap.put("HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE", "64B");//tested
-offensesMap.put("KIDNAPPING-ABDUCTION", "100");//tested
-offensesMap.put("RAPE", "11A");//tested
-
-offensesMap.put("SODOMY", "11B");//tested
-offensesMap.put("SEX_ASSAULT-OBJECT", "11C");//tested
-offensesMap.put("FONDLING", "11D");//tested
-offensesMap.put("INCEST", "36A");//tested
-offensesMap.put("RAPE-STATUTORY", "36B");//FAILED
-
+offensesMap.put("AGGRAVATED_ASSAULT", "13A");//tested grouped
+offensesMap.put("ASSAULT-SIMPLE", "13B");//tested grouped
+offensesMap.put("JUSTIFIABLE_HOMICIDE", "09C");//tested grouped
+offensesMap.put("MANSLAUGHTER_NONNEGLIGENT-MURDER", "09A");//tested grouped
+offensesMap.put("INTIMIDATION", "13C");//tested grouped
+//5
+offensesMap.put("MANSLAUGHTER_NEGLIGENT", "09B");//tested grouped
+offensesMap.put("HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS", "64A");//tested grouped
+offensesMap.put("HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE", "64B");//tested grouped
+offensesMap.put("KIDNAPPING-ABDUCTION", "100");//tested grouped
+offensesMap.put("RAPE", "11A");//tested grouped
+//10
+offensesMap.put("SODOMY", "11B");//tested grouped
+offensesMap.put("SEX_ASSAULT-OBJECT", "11C");//tested grouped
+offensesMap.put("FONDLING", "11D");//tested grouped
+offensesMap.put("INCEST", "36A");//tested grouped
+offensesMap.put("RAPE-STATUTORY", "36B");//tested grouped
+//15
 //crimes against property
 offensesMap.put("ARSON", "200");//tested
 offensesMap.put("BRIBERY", "510");//tested
 offensesMap.put("BURGLARY-BREAKING_ENTERING", "220");//tested
 offensesMap.put("COUNTERFEIT-FORGERY", "250");//tested
 offensesMap.put("DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY", "290");//tested
-
+//20
 offensesMap.put("EMBEZZLEMENT", "270");//failed
 offensesMap.put("EXTORTION-BLACKMAIL", "210");//failed
 offensesMap.put("FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME", "26A");//tested
 offensesMap.put("FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE", "26B");//tested
 offensesMap.put("FRAUD-IMPERSONATION", "26C");//tested
-
+//25
 offensesMap.put("FRAUD-WELFARE_FRAUD", "26D");//tested
 offensesMap.put("FRAUD-BY_WIRE", "26E");//tested
 offensesMap.put("IDENTITY_THEFT", "26F");//tested
 offensesMap.put("HACKING-COMPUTER_INVASION", "26G");//tested
 offensesMap.put("MONEY_LAUNDERING", "26H");//failed code 26H is not valid ; OffenseCodeType - The Enumeration constraint failed
-
+//30
 offensesMap.put("POCKET_PICKING", "23A");//tested
 offensesMap.put("PURSE_SNATCHING", "23B");//tested
 offensesMap.put("SHOPLIFTING", "23C");//tested
 offensesMap.put("LARCENY-FROM_BUILDING", "23D");//tested
 offensesMap.put("LARCENY-FROM_COIN_OPERATED_MACHINE", "23E");//tested
-
+//35
 offensesMap.put("LARCENY-FROM_AUTO", "23F");//tested
 offensesMap.put("LARCENY-PARTS_FROM_VEHICLE", "23G");//tested
 offensesMap.put("LARCENY", "23H");//tested
 offensesMap.put("MOTOR_VEHICLE_THEFT", "240");//tested
 offensesMap.put("ROBBERY", "120");//tested
+//40
 offensesMap.put("STOLEN_PROPERTY_OFFENSES", "280");//tested
 
 //crimes against society
@@ -98,36 +99,36 @@ offensesMap.put("IMMIGRATION-ILLEGAL_ENTRY_INTO_US", "30A");//failed  The Enumer
 offensesMap.put("IMMIGRATION-SMUGGLING_ALIENS", "30C");//failed  The Enumeration constraint failed
 offensesMap.put("IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION", "30D");//failed  The Enumeration constraint failed
 offensesMap.put("OBSCENE_MATERIAL-PORNOGRAPHY", "370");//tested
-
+//45
 offensesMap.put("PROSTITUTION", "40A");//tested
 offensesMap.put("PROSTITUTION-ASSISTING_OR_PROMOTING", "40B");//tested
 offensesMap.put("PROSTITUTION-PURCHASING", "40C");//tested
 offensesMap.put("SEX_OFFENSER_REGISTRATION_VIOLATION", "360");//failed  The Enumeration constraint failed
 offensesMap.put("IMPORT_VIOLATIONS", "58A");//failed  The Enumeration constraint failed
-
+//50
 offensesMap.put("EXPORT_VIOLATIONS", "58B");//failed  The Enumeration constraint failed
 offensesMap.put("FEDERAL_LIQUOR_OFFENSES", "61A");//failed  The Enumeration constraint failed
 offensesMap.put("FEDERAL_TOBACCO_OFFENSES", "61B");//failed  The Enumeration constraint failed
 offensesMap.put("WILDLIFE_TRAFFICKING", "620");//failed  The Enumeration constraint failed
 offensesMap.put("DRUG-NARCOTIC_VIOLATIONS", "35A");//failed
-
+//55
 offensesMap.put("DRUG-EQUIPMENT_VIOLATIONS", "35B");//failed
 offensesMap.put("ESPIONAGE", "103");//failed  The Enumeration constraint failed
 offensesMap.put("FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST", "49A");//failed  The Enumeration constraint failed
 offensesMap.put("FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION", "49B");//failed  The Enumeration constraint failed
 offensesMap.put("FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION", "49C");//failed  The Enumeration constraint failed
-
+//60
 offensesMap.put("BETTING-WAGERING", "39A");//tested
 offensesMap.put("GAMBLING-OPERATING_PROMOTING_ASSISTING", "39B");//tested
 offensesMap.put("GAMBLING-EQUIPMENT_VIOLATION", "39C");//tested
 offensesMap.put("SPORTS_TAMPERING", "39D");//tested
 offensesMap.put("TREASON", "101");//failed  The Enumeration constraint failed
-
+//65
 offensesMap.put("WEAPON_LAW_VIOLATIONS", "520");//failed
 offensesMap.put("FIREARM_ACT_VIOLATION", "521");//failed  The Enumeration constraint failed
 offensesMap.put("WEAPONS_OF_MASS_DESTRUCTION", "522");//failed  The Enumeration constraint failed
 offensesMap.put("EXPLOSIVES", "526");//failed  The Enumeration constraint failed
-
+//70
 //GROUP B OFFENSES
 //crimes against person, property, or society
 offensesMap.put("ALL_OTHER_OFFENSES", "90Z");//review listed as Group B
