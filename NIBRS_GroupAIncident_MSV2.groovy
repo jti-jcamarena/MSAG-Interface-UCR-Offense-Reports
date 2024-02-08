@@ -1,3 +1,5 @@
+import com.sustain.util.RichList
+
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,6 +35,11 @@ import java.util.Collections;
  */
 //Homicide Offenses
 def ArrayList<String> homicideOffenses = Arrays.asList("MANSLAUGHTER_NONNEGLIGENT-MURDER,MANSLAUGHTER_NEGLIGENT,JUSTIFIABLE_HOMICIDE".split(","));
+
+
+//Victim Injury Type must be specified when Victim Connected to UCR Offense Code is one of: 100, 11A, 11B, 11C, 11D, 120, 13A, 13B, 210, 64A, 64B
+def ArrayList<String> victimInjuryTypeRequiredUCR =
+        Arrays.asList("KIDNAPPING-ABDUCTION,RAPE,SODOMY,SEX_ASSAULT-OBJECT,FONDLING,ROBBERY,AGGRAVATED_ASSAULT,ASSAULT-SIMPLE,EXTORTION-BLACKMAIL,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE".split(","));
 
 //TODO UCR Group A Offenses review
 
@@ -363,8 +370,9 @@ PrintWriter fileWriter = new PrintWriter(reportFile);
 
 
 //HashSet<Party> offenseVictims = new HashSet();
-    String victimFilterXrefChargeVictim = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref";
-    String chargeFilterXrefVictimCharge = "xrefs[refType == 'VICTIMOF' && entityType=='Charge'].ref";
+    String victimFilterXrefChargeVictim = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null]";
+    String victimFilterXrefChargeVictimById = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null && id == #p1]";
+    String chargeFilterXrefVictimCharge = "xrefs[refType == 'VICTIMOF' && entityType=='Charge'].ref[id != null && associatedParty == #p1]";
     String chargeFilter = "charges[chargeDate >= #p1 && chargeDate <= #p2]";
 //offenses.each({offense -> offenseVictims.addAll(offense.collect(victimFilterXrefChargeVictim))});
 //ArrayList<Party> offenseVictimsArrayList = new ArrayList(offenseVictims);
@@ -464,7 +472,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
         ArrayList<Party> offenseVictimsArrayList = new ArrayList(offenseVictims);
         //internalTesting != "true" ?: logger.debug("offenseVictims: " + offenseVictims);
 
-        for (victim in offenseVictims) {
+        for (def Party victim in offenseVictims) {
             //TODO complete interface tracking detail
 //            CtInterfaceTrackingDetail interfaceTrackingDetail = new CtInterfaceTrackingDetail();
 //            interfaceTrackingDetail.ctInterfaceTracking = interfaceTracking;
@@ -620,7 +628,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
 
 
 
-                for (relatedOffense in relatedCharges) {
+                for (def Charge relatedOffense in relatedCharges) {
                     if (relatedOffense.updateReason != "NIBRS") {
                         relatedOffense.updateReason = "NIBRS";
                         relatedOffense.saveOrUpdate();
@@ -719,9 +727,9 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                 internalTesting != "true" ?: logger.debug("inside loop: offenseUCRCodeRelatedOffense:${getOffenseUCRCode(relatedOffense)}");
               }
                 throw new Exception("testing")*/
-
-                //for (relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it))}))){
-                for (relatedOffense in relatedCharges) {
+//TODO Items must be unique by ItemStatus
+                for (def Charge relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({ Charge it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it))}))){
+                //for (relatedOffense in relatedCharges) {
                     internalTesting != "true" ?: logger.debug("inside loop: " + getItemStatus(relatedOffense));
                     String offenseUCRCodeRelatedOffense = getOffenseUCRCode(relatedOffense);
                     internalTesting != "true" ?: logger.debug("offenseUCRCodeRelatedOffense:${getOffenseUCRCode(relatedOffense)}");
@@ -784,7 +792,6 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
 
 
                 //for (victim in offenseVictims){
-                //offense = getVictimsXrefOffenses(victim, chargeFilterXrefVictimCharge).find({it -> offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(it) || it.statute != null});
                 fileWriter.println("<nc:Person s:id='" + "PersonVictim${victim.id}" + "'>");
                 internalTesting != "true" ?: logger.debug("contains crimeAgainsSociety: " + offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(relatedCharges.first())))
                 if (/*victimCategoryCodesRequireDemographics.contains(getVictimCategoryCode(offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS, victim, offense, offenseUCRCodeRequiredWhenVictimTypeIsG))*/
@@ -819,9 +826,9 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                 fileWriter.println("</nc:Person>");
                 //}
 
-                offenseSubjects.each({ it -> internalTesting != "true" ?: logger.debug("offenseSubject:${it}") });
 
-                for (subject in offenseSubjects) {
+
+                for (def Party subject in offenseSubjects) {
                     fileWriter.println("<nc:Person s:id='" + "PersonSubject${subject.id}" + "'>");
 
 
@@ -850,12 +857,20 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
 
 
                 //for (victim in offenseVictims){
-                //offense = getVictimsXrefOffenses(victim, chargeFilterXrefVictimCharge).find({charge -> charge.id != null});
                 fileWriter.println("<j:Victim s:id='" + "Victim${victim.id}" + "'>");
                 fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}" + "'/>");
                 //<!-- Element 23, Victim Sequence Number -->
                 fileWriter.println("<j:VictimSequenceNumberText>${offenseVictimsArrayList.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
-                if (["100", "11A", "11B", "11C", "11D", "120", "13A", "13B", "210", "64A", "64B"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+
+                //TODO review victim injury type when victim related offense meets criteria
+                //  getVictimsXrefOffenses(Party victim, String chargeFilterXrefVictimCharge)
+
+                def ArrayList<String> victimOffenseUCRCodes = getVictimOffenseUCRCodes(relatedCharges, victim, victimFilterXrefChargeVictimById)
+
+                if ( !Collections.disjoint( victimOffenseUCRCodes, victimInjuryTypeRequiredUCR) ){
+                    logger.debug("<j:VictimInjury>")
+                //if (victimInjuryTypeRequiredUCR.contains(getOffenseUCRCode(offense))){
+                //if (["100", "11A", "11B", "11C", "11D", "120", "13A", "13B", "210", "64A", "64B"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
                     //  <!-- Element 33, Type Injury -->
                     fileWriter.println("<j:VictimInjury>");
                     fileWriter.println("<j:InjuryCategoryCode>N</j:InjuryCategoryCode>");
@@ -1012,9 +1027,6 @@ protected String getVictimCategoryCode(ArrayList ucrOffensesAgainsSocietyRequire
     return victimCategoryCode;
 }
 
-protected ArrayList<Charge> getVictimsXrefOffenses(Party victim, String chargeFilterXrefVictimCharge) {
-    return victim.collect(chargeFilterXrefVictimCharge)?.orderBy("id");
-}
 
 //TODO delete this block
 
@@ -1023,6 +1035,12 @@ protected ArrayList<Charge> getVictimsXrefOffenses(Party victim, String chargeFi
 //  offensesAll.findAll({offense -> getOffenseUCRCode(offense) == ucrOffense && offense.collect(victimFilterXrefChargeVictim).findAll({thisVictim -> thisVictim == ucrVictim})})?.each({offense -> ucrOffenseSubjects.add(offense.associatedParty)});
 //  return ucrOffenseSubjects?.unique({party -> party});
 //}
+
+protected ArrayList<String> getVictimOffenseUCRCodes(ArrayList<Charge> relatedCharges, Party victim, String victimFilterXrefChargeVictimById) {
+    def ArrayList<String> victimOffenseUCRCodes = new ArrayList();
+    relatedCharges.findAll({Charge it -> it.collect(victimFilterXrefChargeVictimById, victim.id)}).each({Charge it -> victimOffenseUCRCodes.add(getOffenseUCRCode(it))});
+    return victimOffenseUCRCodes;
+}
 
 protected ArrayList<Party> getOffenseSubjects(Charge offense) {
     ArrayList<Party> ucrOffenseSubjects = new ArrayList();
