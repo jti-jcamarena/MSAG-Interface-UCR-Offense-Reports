@@ -56,3 +56,5 @@ When Offense code = 09C, at least one offender must contain values other than un
 Age of Victim should be under 18 when Victim Connected to UCR Offense Code is 36B = Statutory Rape. Age: 36
 
 Combination of Property Loss + Property Description must be unique 20,20
+
+Victim Injury Type must be specified when Victim Connected to UCR Offense Code is one of: 100, 11A, 11B, 11C, 11D, 120, 13A, 13B, 210, 64A, 64B

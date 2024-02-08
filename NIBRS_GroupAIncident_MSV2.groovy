@@ -563,10 +563,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
 
                 internalTesting != "true" ?: logger.debug("TESTING: offenses:${getUCROffenses(relatedCharges)}: " + "disjoint: " + Collections.disjoint(getUCROffenses(relatedCharges), ["BURGLARY-BREAKING_ENTERING"]));
 
-                //getOffenseUCRCode(offense)
-
-
-                if (Collections.disjoint(Arrays.asList("ROBBERY,EXTORTION-BLACKMAIL,BURGLARY-BREAKING_ENTERING,LARCENY-FROM_BUILDING,LARCENY-FROM_AUTO,LARCENY,MOTOR_VEHICLE_THEFT,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-IMPERSONATION,FRAUD-BY_WIRE,IDENTITY_THEFT,HACKING-COMPUTER_INVASION,BRIBERY,EMBEZZLEMENT".split(",")), getUCROffenses(relatedCharges)) == false) {
+               if (Collections.disjoint(Arrays.asList("ROBBERY,EXTORTION-BLACKMAIL,BURGLARY-BREAKING_ENTERING,LARCENY-FROM_BUILDING,LARCENY-FROM_AUTO,LARCENY,MOTOR_VEHICLE_THEFT,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-IMPERSONATION,FRAUD-BY_WIRE,IDENTITY_THEFT,HACKING-COMPUTER_INVASION,BRIBERY,EMBEZZLEMENT".split(",")), getUCROffenses(relatedCharges)) == false) {
                     fileWriter.println("<j:OffenseCargoTheftIndicator>true</j:OffenseCargoTheftIndicator>");
                 }
                 fileWriter.println("</cjis:IncidentAugmentation>");
@@ -868,9 +865,6 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                 def ArrayList<String> victimOffenseUCRCodes = getVictimOffenseUCRCodes(relatedCharges, victim, victimFilterXrefChargeVictimById)
 
                 if ( !Collections.disjoint( victimOffenseUCRCodes, victimInjuryTypeRequiredUCR) ){
-                    logger.debug("<j:VictimInjury>")
-                //if (victimInjuryTypeRequiredUCR.contains(getOffenseUCRCode(offense))){
-                //if (["100", "11A", "11B", "11C", "11D", "120", "13A", "13B", "210", "64A", "64B"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
                     //  <!-- Element 33, Type Injury -->
                     fileWriter.println("<j:VictimInjury>");
                     fileWriter.println("<j:InjuryCategoryCode>N</j:InjuryCategoryCode>");
@@ -878,7 +872,7 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                 }
                 //<!-- Element 25, Type of Victim -->
                 //String victimCategoryCode = getVictimCategoryCode(offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS, victim, offenses, offenseUCRCodeRequiredWhenVictimTypeIsG);
-
+//TODO is there a better way to determine victimCategoryCode?
                 String victimCategoryCode = offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(relatedCharges.first())) == false ? "I" : "S";
 
                 victimCategoryCode = offenseUCRCodeRequiredWhenVictimTypeG.contains(getOffenseUCRCode(relatedCharges.first())) == true ? "G" : victimCategoryCode;
@@ -1027,15 +1021,6 @@ protected String getVictimCategoryCode(ArrayList ucrOffensesAgainsSocietyRequire
     return victimCategoryCode;
 }
 
-
-//TODO delete this block
-
-//protected ArrayList<Party> getOffenseSubjects(ArrayList<Charge> offensesAll, String ucrOffense, String victimFilterXrefChargeVictim, Party ucrVictim){
-//  ArrayList<Party> ucrOffenseSubjects = new ArrayList();
-//  offensesAll.findAll({offense -> getOffenseUCRCode(offense) == ucrOffense && offense.collect(victimFilterXrefChargeVictim).findAll({thisVictim -> thisVictim == ucrVictim})})?.each({offense -> ucrOffenseSubjects.add(offense.associatedParty)});
-//  return ucrOffenseSubjects?.unique({party -> party});
-//}
-
 protected ArrayList<String> getVictimOffenseUCRCodes(ArrayList<Charge> relatedCharges, Party victim, String victimFilterXrefChargeVictimById) {
     def ArrayList<String> victimOffenseUCRCodes = new ArrayList();
     relatedCharges.findAll({Charge it -> it.collect(victimFilterXrefChargeVictimById, victim.id)}).each({Charge it -> victimOffenseUCRCodes.add(getOffenseUCRCode(it))});
@@ -1050,17 +1035,17 @@ protected ArrayList<Party> getOffenseSubjects(Charge offense) {
 
 protected ArrayList<Party> getOffenseSubjectVictims(ArrayList<Charge> offensesAll, String ucrOffense, String victimFilterXrefChargeVictim) {
     ArrayList<Party> ucrOffenseVictims = new ArrayList();
-    offensesAll.findAll({ offense -> getOffenseUCRCode(offense) == ucrOffense })?.each({ offense -> ucrOffenseVictims.addAll(offense.collect(victimFilterXrefChargeVictim)) });
+    offensesAll.findAll({ Charge offense -> getOffenseUCRCode(offense) == ucrOffense })?.each({ offense -> ucrOffenseVictims.addAll(offense.collect(victimFilterXrefChargeVictim)) });
     return ucrOffenseVictims;
 }
 
 protected Integer getAge(Party party) {
-    def age = party.person.collect("profiles[dateOfBirth != null].age").find({ it -> it != null });
+    def Integer age = party.person.collect("profiles[dateOfBirth != null].age").find({ it -> it != null });
     return age;
 }
 
 protected String getGenderCode(Party party, Charge thisOffense) {
-    def gender = party.person.collect("profiles[gender != null].gender").find({ it -> it != null });
+    def String gender = party.person.collect("profiles[gender != null].gender").find({ it -> it != null });
     if ((gender == null || !["MALE", "FEMALE"].contains(gender)) && isExceptionalClearanceAtoE(thisOffense) == false) {
         gender = "U";
     } else if (gender == "FEMALE") {
@@ -1072,7 +1057,7 @@ protected String getGenderCode(Party party, Charge thisOffense) {
 }
 
 protected String getEthnicity(Party party, Charge thisOffense) {
-    def ethnicity = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
+    def String ethnicity = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
     if (ethnicity == null && isExceptionalClearanceAtoE(thisOffense) == false) {
         ethnicity = "U";
     } else if (ethnicity == "HISPANIC") {
@@ -1084,7 +1069,7 @@ protected String getEthnicity(Party party, Charge thisOffense) {
 }
 
 protected String getRace(Party party, Charge thisOffense) {
-    def race = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
+    def String race = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
     if (isExceptionalClearanceAtoE(thisOffense) == false && (race == null || !["WHITE", "BLACK", "AMERICANINDIAN", "ASIAN", "NATIVEHAWAIIAN"].contains(race))) {
         race = "U";
     } else if (race == "BLACK") {
@@ -1106,9 +1091,7 @@ protected String getItemCategoryCode(Charge thisOffense){
 }
 
 protected String getItemStatus(Charge thisOffense) {
-    String itemStatus = thisOffense.cf_itemStatus == null || isAttempted(thisOffense) ? "NONE" : thisOffense.cf_itemStatus;
-    //itemStatus = "ROBBERY" == getOffenseUCRCode(thisOffense) && isAttempted(thisOffense) ? "RECOVERED" : thisOffense.cf_itemStatus;
-    //itemStatus = "ROBBERY" == getOffenseUCRCode(thisOffense) && !isAttempted(thisOffense) ? "STOLEN" : thisOffense.cf_itemStatus;
+    def String itemStatus = thisOffense.cf_itemStatus == null || isAttempted(thisOffense) ? "NONE" : thisOffense.cf_itemStatus;
 
     if (Arrays.asList("BRIBERY,BURGLARY-BREAKING_ENTERING,KIDNAPPING-ABDUCTION,ROBBERY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         //Item Status Code must be NONE, RECOVERED, STOLEN or UNKNOWN
@@ -1318,7 +1301,3 @@ protected List<String> getUCROffenses(List offenses) {
     offenses.each({ it -> ucrOffenses.add(it.collect("chargeAttributes")?.find({ attr -> attr != null })) });
     return ucrOffenses;
 }
-
-
-
-
