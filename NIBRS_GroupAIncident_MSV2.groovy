@@ -96,20 +96,21 @@ offensesMap.put("LARCENY", "23H");//tested grouped
 offensesMap.put("MOTOR_VEHICLE_THEFT", "240");//tested grouped
 offensesMap.put("ROBBERY", "120");//tested grouped
 //40
-offensesMap.put("STOLEN_PROPERTY_OFFENSES", "280");//tested
+//TODO check item status dropdown
+offensesMap.put("STOLEN_PROPERTY_OFFENSES", "280");//tested grouped
 
 //crimes against society
-offensesMap.put("CRUELTY_TO_ANIMALS", "720");//tested
+offensesMap.put("CRUELTY_TO_ANIMALS", "720");//tested grouped
 
 offensesMap.put("IMMIGRATION-FALSE_CITIZENSHIP", "30B");//failed  The Enumeration constraint failed
 offensesMap.put("IMMIGRATION-ILLEGAL_ENTRY_INTO_US", "30A");//failed  The Enumeration constraint failed
 offensesMap.put("IMMIGRATION-SMUGGLING_ALIENS", "30C");//failed  The Enumeration constraint failed
 offensesMap.put("IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION", "30D");//failed  The Enumeration constraint failed
-offensesMap.put("OBSCENE_MATERIAL-PORNOGRAPHY", "370");//tested
+offensesMap.put("OBSCENE_MATERIAL-PORNOGRAPHY", "370");//tested grouped
 //45
-offensesMap.put("PROSTITUTION", "40A");//tested
-offensesMap.put("PROSTITUTION-ASSISTING_OR_PROMOTING", "40B");//tested
-offensesMap.put("PROSTITUTION-PURCHASING", "40C");//tested
+offensesMap.put("PROSTITUTION", "40A");//tested grouped
+offensesMap.put("PROSTITUTION-ASSISTING_OR_PROMOTING", "40B");//tested grouped
+offensesMap.put("PROSTITUTION-PURCHASING", "40C");//tested grouped
 offensesMap.put("SEX_OFFENSER_REGISTRATION_VIOLATION", "360");//failed  The Enumeration constraint failed
 offensesMap.put("IMPORT_VIOLATIONS", "58A");//failed  The Enumeration constraint failed
 //50
@@ -117,8 +118,10 @@ offensesMap.put("EXPORT_VIOLATIONS", "58B");//failed  The Enumeration constraint
 offensesMap.put("FEDERAL_LIQUOR_OFFENSES", "61A");//failed  The Enumeration constraint failed
 offensesMap.put("FEDERAL_TOBACCO_OFFENSES", "61B");//failed  The Enumeration constraint failed
 offensesMap.put("WILDLIFE_TRAFFICKING", "620");//failed  The Enumeration constraint failed
+//TODO check item status drop down
 offensesMap.put("DRUG-NARCOTIC_VIOLATIONS", "35A");//failed
 //55
+//TODO check item status drop down
 offensesMap.put("DRUG-EQUIPMENT_VIOLATIONS", "35B");//failed
 offensesMap.put("ESPIONAGE", "103");//failed  The Enumeration constraint failed
 offensesMap.put("FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST", "49A");//failed  The Enumeration constraint failed
@@ -126,8 +129,11 @@ offensesMap.put("FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION", "49B");//failed  The Enu
 offensesMap.put("FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION", "49C");//failed  The Enumeration constraint failed
 //60
 offensesMap.put("BETTING-WAGERING", "39A");//tested
+//TODO check item status drop down
 offensesMap.put("GAMBLING-OPERATING_PROMOTING_ASSISTING", "39B");//tested
+//TODO check item status drop down
 offensesMap.put("GAMBLING-EQUIPMENT_VIOLATION", "39C");//tested
+//TODO check item status drop down
 offensesMap.put("SPORTS_TAMPERING", "39D");//tested
 offensesMap.put("TREASON", "101");//failed  The Enumeration constraint failed
 //65

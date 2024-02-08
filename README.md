@@ -58,3 +58,14 @@ Age of Victim should be under 18 when Victim Connected to UCR Offense Code is 36
 Combination of Property Loss + Property Description must be unique 20,20
 
 Victim Injury Type must be specified when Victim Connected to UCR Offense Code is one of: 100, 11A, 11B, 11C, 11D, 120, 13A, 13B, 210, 64A, 64B
+
+Type of Victim must have a value of S = Society/Public when Data Element 24 (Victim Connected to UCR Offense Code) contains a Crime Against Society: I
+
+There should only be one victim and it should have a type of Society/Public when UCR Offense Code contains only crimes against society G
+
+Type of Victim must have a value of S = Society/Public when Data Element 24 (Victim Connected to UCR Offense Code) contains a Crime Against Society: G
+
+Suspected Drug Type must be entered when Type of Property Loss is 1 and Offense Code is 35A
+
+
+
