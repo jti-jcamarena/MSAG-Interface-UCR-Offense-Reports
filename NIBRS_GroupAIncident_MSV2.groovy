@@ -1,5 +1,5 @@
-import com.sustain.util.RichList
-
+import com.sustain.util.RichList;
+import com.sustain.properties.model.SystemProperty;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,21 +18,21 @@ import com.sustain.entities.custom.CtInterfaceTrackingDetail;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 
-/**
- lastUpdated:01/18/2024 10:04
- * Need an ORI number for this agency and lea's
- * https://journaltech.sharepoint.com/:x:/s/MississippiAG/EegY8NK6owBEmQV-Z29xNh4BvLjC4KmD0-CsZNgnbsQu1w?e=grZ56N
- *
- * The UCR Code must be unique within the Incident Report.
- *
- * Any subjects/defendants and victims must all be related to each other, so it's necessary to limit each report by victim so that any included are subjects *correctly associated.
- *
- * Each Offense Segment with a valid UCR Offense code, must have an Offense Victim Association
- *
- * The Location type is required for each offense.
- *
- * When submitting a Group A Incident Report to be ingested into the NIBRS system, Incident, Offense, Victim, and Subject must be provided.
- */
+
+// *lastUpdated:02/08/2024
+// * Need an ORI number for this agency and lea's
+// * https://journaltech.sharepoint.com/:x:/s/MississippiAG/EegY8NK6owBEmQV-Z29xNh4BvLjC4KmD0-CsZNgnbsQu1w?e=grZ56N
+// *
+// * The UCR Code must be unique within the Incident Report.
+// *
+// * Any subjects/defendants and victims must all be related to each other, so it's necessary to limit each report by victim so that any included are subjects *correctly associated.
+// *
+// * Each Offense Segment with a valid UCR Offense code, must have an Offense Victim Association
+// *
+// * The Location type is required for each offense.
+// *
+// * When submitting a Group A Incident Report to be ingested into the NIBRS system, Incident, Offense, Victim, and Subject must be provided.
+
 //Homicide Offenses
 def ArrayList<String> homicideOffenses = Arrays.asList("MANSLAUGHTER_NONNEGLIGENT-MURDER,MANSLAUGHTER_NEGLIGENT,JUSTIFIABLE_HOMICIDE".split(","));
 
@@ -66,23 +66,23 @@ offensesMap.put("INCEST", "36A");//tested grouped
 offensesMap.put("RAPE-STATUTORY", "36B");//tested grouped
 //15
 //crimes against property
-offensesMap.put("ARSON", "200");//tested
-offensesMap.put("BRIBERY", "510");//tested
-offensesMap.put("BURGLARY-BREAKING_ENTERING", "220");//tested
-offensesMap.put("COUNTERFEIT-FORGERY", "250");//tested
-offensesMap.put("DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY", "290");//tested
+offensesMap.put("ARSON", "200");//tested grouped
+offensesMap.put("BRIBERY", "510");//tested grouped
+offensesMap.put("BURGLARY-BREAKING_ENTERING", "220");//tested grouped
+offensesMap.put("COUNTERFEIT-FORGERY", "250");//tested grouped
+offensesMap.put("DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY", "290");//tested grouped
 //20
-offensesMap.put("EMBEZZLEMENT", "270");//failed
-offensesMap.put("EXTORTION-BLACKMAIL", "210");//failed
-offensesMap.put("FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME", "26A");//tested
-offensesMap.put("FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE", "26B");//tested
-offensesMap.put("FRAUD-IMPERSONATION", "26C");//tested
+offensesMap.put("EMBEZZLEMENT", "270");//tested grouped
+offensesMap.put("EXTORTION-BLACKMAIL", "210");//tested grouped
+offensesMap.put("FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME", "26A");//tested grouped
+offensesMap.put("FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE", "26B");//tested grouped
+offensesMap.put("FRAUD-IMPERSONATION", "26C");//tested grouped
 //25
-offensesMap.put("FRAUD-WELFARE_FRAUD", "26D");//tested
-offensesMap.put("FRAUD-BY_WIRE", "26E");//tested
-offensesMap.put("IDENTITY_THEFT", "26F");//tested
-offensesMap.put("HACKING-COMPUTER_INVASION", "26G");//tested
-offensesMap.put("MONEY_LAUNDERING", "26H");//failed code 26H is not valid ; OffenseCodeType - The Enumeration constraint failed
+offensesMap.put("FRAUD-WELFARE_FRAUD", "26D");//tested grouped
+offensesMap.put("FRAUD-BY_WIRE", "26E");//tested grouped
+offensesMap.put("IDENTITY_THEFT", "26F");//tested grouped
+offensesMap.put("HACKING-COMPUTER_INVASION", "26G");//tested grouped
+//offensesMap.put("MONEY_LAUNDERING", "26H");//failed code 26H is not valid ; OffenseCodeType - The Enumeration constraint failed
 //30
 offensesMap.put("POCKET_PICKING", "23A");//tested
 offensesMap.put("PURSE_SNATCHING", "23B");//tested
