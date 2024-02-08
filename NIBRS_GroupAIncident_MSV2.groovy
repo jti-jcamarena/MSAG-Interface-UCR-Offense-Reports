@@ -84,17 +84,17 @@ offensesMap.put("IDENTITY_THEFT", "26F");//tested grouped
 offensesMap.put("HACKING-COMPUTER_INVASION", "26G");//tested grouped
 //offensesMap.put("MONEY_LAUNDERING", "26H");//failed code 26H is not valid ; OffenseCodeType - The Enumeration constraint failed
 //30
-offensesMap.put("POCKET_PICKING", "23A");//tested
-offensesMap.put("PURSE_SNATCHING", "23B");//tested
-offensesMap.put("SHOPLIFTING", "23C");//tested
-offensesMap.put("LARCENY-FROM_BUILDING", "23D");//tested
-offensesMap.put("LARCENY-FROM_COIN_OPERATED_MACHINE", "23E");//tested
+offensesMap.put("POCKET_PICKING", "23A");//tested grouped
+offensesMap.put("PURSE_SNATCHING", "23B");//tested grouped
+offensesMap.put("SHOPLIFTING", "23C");//tested grouped
+offensesMap.put("LARCENY-FROM_BUILDING", "23D");//tested grouped
+offensesMap.put("LARCENY-FROM_COIN_OPERATED_MACHINE", "23E");//tested grouped
 //35
-offensesMap.put("LARCENY-FROM_AUTO", "23F");//tested
-offensesMap.put("LARCENY-PARTS_FROM_VEHICLE", "23G");//tested
-offensesMap.put("LARCENY", "23H");//tested
-offensesMap.put("MOTOR_VEHICLE_THEFT", "240");//tested
-offensesMap.put("ROBBERY", "120");//tested
+offensesMap.put("LARCENY-FROM_AUTO", "23F");//tested grouped
+offensesMap.put("LARCENY-PARTS_FROM_VEHICLE", "23G");//tested grouped
+offensesMap.put("LARCENY", "23H");//tested grouped
+offensesMap.put("MOTOR_VEHICLE_THEFT", "240");//tested grouped
+offensesMap.put("ROBBERY", "120");//tested grouped
 //40
 offensesMap.put("STOLEN_PROPERTY_OFFENSES", "280");//tested
 
