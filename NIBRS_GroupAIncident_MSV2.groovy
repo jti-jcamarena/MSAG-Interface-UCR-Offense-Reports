@@ -41,6 +41,18 @@ def ArrayList<String> homicideOffenses = Arrays.asList("MANSLAUGHTER_NONNEGLIGEN
 def ArrayList<String> victimInjuryTypeRequiredUCR =
         Arrays.asList("KIDNAPPING-ABDUCTION,RAPE,SODOMY,SEX_ASSAULT-OBJECT,FONDLING,ROBBERY,AGGRAVATED_ASSAULT,ASSAULT-SIMPLE,EXTORTION-BLACKMAIL,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE".split(","));
 
+//UCR Offenses which are grouped as crimes against society, required S - Society for victimCategory
+def ArrayList<String> victimCategoryCodeSocietyRequiredUCR =
+        Arrays.asList("CRUELTY_TO_ANIMALS,DRUG-NARCOTIC_VIOLATIONS,DRUG-EQUIPMENT_VIOLATIONS,ESPIONAGE,FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST,FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION,FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION,BETTING-WAGERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,GAMBLING-EQUIPMENT_VIOLATION,IMMIGRATION-ILLEGAL_ENTRY_INTO_US,IMMIGRATION-FALSE_CITIZENSHIP,IMMIGRATION,SMUGGLING_ALIENS,IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION,OBSCENE_MATERIAL-PORNOGRAPHY,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,SEX_OFFENDER_REGISTRATION_VIOLATION,TREASON,WEAPON_LAW_VIOLATIONS".split(","));
+
+
+//UCR Offenses which are grouped as crimes against society, but required G - Government for victimCategory
+def ArrayList<String> victimCategoryCodeGovernmentRequiredUCR =
+        Arrays.asList("MONEY_LAUNDERING,FIREARM_ACT_VIOLATION,WEAPONS_OF_MASS_DESTRUCTION,EXPLOSIVES,IMPORT_VIOLATIONS,EXPORT_VIOLATIONS,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,WILDLIFE_TRAFFICKING".split(","));
+
+def ArrayList<String> substanceRelatedUCR = Arrays.asList("DRUG-NARCOTIC_VIOLATIONS,DRUG-EQUIPMENT_VIOLATIONS".split(","));
+
+
 //TODO UCR Group A Offenses review
 
 //offensesMap stores UCR offense label and code
@@ -242,11 +254,11 @@ PrintWriter fileWriter = new PrintWriter(reportFile);
     String criminalActivityCategoryCode;
 
     ArrayList<String> offenseUCRCodeGroupA = new ArrayList<>(Arrays.asList("ALL_OTHER_OFFENSES,AGGRAVATED_ASSAULT,ARSON,ASSAULT-SIMPLE,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,CRUELTY_TO_ANIMALS,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,ESPIONAGE,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FONDLING,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION,FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION,FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,IDENTITY_THEFT,IMMIGRATION-FALSE_CITIZENSHIP,IMMIGRATION-ILLEGAL_ENTRY_INTO_US,IMMIGRATION-OTHER_IMMIGRATION_VIOLATIONS,IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION,IMMIGRATION-SMUGGLING_ALIENS,IMPORT_VIOLATIONS,INCEST,INTIMIDATION,JUSTIFIABLE_HOMICIDE,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MANSLAUGHTER_NEGLIGENT,MANSLAUGHTER_NONNEGLIGENT-MURDER,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,OBSCENE_MATERIAL-PORNOGRAPHY,POCKET_PICKING,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,PURSE_SNATCHING,RAPE,RAPE-STATUTORY,ROBBERY,SEX_ASSAULT-OBJECT,SEX_OFFENDER_REGISTRATION_VIOLATION,SHOPLIFTING,SODOMY,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,TREASON,WEAPON_LAW_VIOLATIONS,WEAPONS_OF_MASS_DESTRUCTION,WILDLIFE_TRAFFICKING".split(",")));
-
+//TODO review offenseUCRCodeRequiredWhenVictimTypeG
 //Victim type must be G - Government
     ArrayList<String> offenseUCRCodeRequiredWhenVictimTypeG = Arrays.asList("DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EXPLOSIVES,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,IMPORT_VIOLATIONS,WEAPONS_OF_MASS_DESTRUCTION,WILDLIFE_TRAFFICKING,ALL_OTHER_OFFENSES,EXPORT_VIOLATIONS,MONEY_LAUNDERING".split(","));
 
-
+//TODO review offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS
 // When victim type is S, one of the following URC codes is required
     ArrayList<String> offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS = new ArrayList<>(Arrays.asList("ALL_OTHER_OFFENSES,BETTING-WAGERING,CRUELTY_TO_ANIMALS,CURFEW-LOITERING-VAGRANCY_VIOLATIONS,DISORDERLY_CONDUCT,DRIVING_UNDER_INFLUENCE,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,DRUNKENNESS,ESPIONAGE,FAILURE_TO_APPEAR,FAMILY_OFFENSES-NONVIOLENT,FEDERAL_RESOURCE_VIOLATIONS,FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION,FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION,FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,IMMIGRATION-FALSE_CITIZENSHIP,IMMIGRATION-ILLEGAL_ENTRY_INTO_US,IMMIGRATION-OTHER_IMMIGRATION_VIOLATIONS,IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION,IMMIGRATION-SMUGGLING_ALIENS,LIQUOR_LAW_VIOLATIONS,OBSCENE_MATERIAL-PORNOGRAPHY,PEEPING_TOM,PERJURY,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,SEX_OFFENDER_REGISTRATION_VIOLATION,SPORTS_TAMPERING,TREASON,TRESPASSING,WEAPON_LAW_VIOLATIONS".split(",")));
 
@@ -567,9 +579,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
                 fileWriter.println("<cjis:IncidentReportDateIndicator>${incidentReportDateIndicator}</cjis:IncidentReportDateIndicator>");
                 // <!-- Element 2A, Cargo Theft Indicator: True/False-->
 
-                internalTesting != "true" ?: logger.debug("TESTING: offenses:${getUCROffenses(relatedCharges)}: " + "disjoint: " + Collections.disjoint(getUCROffenses(relatedCharges), ["BURGLARY-BREAKING_ENTERING"]));
-
-               if (Collections.disjoint(Arrays.asList("ROBBERY,EXTORTION-BLACKMAIL,BURGLARY-BREAKING_ENTERING,LARCENY-FROM_BUILDING,LARCENY-FROM_AUTO,LARCENY,MOTOR_VEHICLE_THEFT,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-IMPERSONATION,FRAUD-BY_WIRE,IDENTITY_THEFT,HACKING-COMPUTER_INVASION,BRIBERY,EMBEZZLEMENT".split(",")), getUCROffenses(relatedCharges)) == false) {
+                if (Collections.disjoint(Arrays.asList("ROBBERY,EXTORTION-BLACKMAIL,BURGLARY-BREAKING_ENTERING,LARCENY-FROM_BUILDING,LARCENY-FROM_AUTO,LARCENY,MOTOR_VEHICLE_THEFT,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-IMPERSONATION,FRAUD-BY_WIRE,IDENTITY_THEFT,HACKING-COMPUTER_INVASION,BRIBERY,EMBEZZLEMENT".split(",")), getUCROffenses(relatedCharges)) == false) {
                     fileWriter.println("<j:OffenseCargoTheftIndicator>true</j:OffenseCargoTheftIndicator>");
                 }
                 fileWriter.println("</cjis:IncidentAugmentation>");
@@ -630,7 +640,6 @@ internalTesting != "true" ?: logger.debug(ucrs);
 //                relatedCharges.each({ it -> internalTesting != "true" ?: logger.debug("each ucr: " + getOffenseUCRCode(it)) })
 
 
-
                 for (def Charge relatedOffense in relatedCharges) {
                     if (relatedOffense.updateReason != "NIBRS") {
                         relatedOffense.updateReason = "NIBRS";
@@ -689,7 +698,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
                         forceCategoryCode = forceCategoryCode == "" ? "99" : forceCategoryCode;
 
                         forceCategoryCode = offenseUCRCodeRequiredWhenWeaponInvolved.contains(relatedOffenseUCRCode) ? "95" : forceCategoryCode;
-logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedOffenseUCRCode:${relatedOffenseUCRCode}; homicideOffenses:${homicideOffenses}")
+                        logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedOffenseUCRCode:${relatedOffenseUCRCode}; homicideOffenses:${homicideOffenses}")
                         forceCategoryCode = homicideOffenses.contains(relatedOffenseUCRCode) && forceCategoryCode == "99" ? "30" : forceCategoryCode;
 
                         fileWriter.println("<j:OffenseForce>");
@@ -725,22 +734,13 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                     internalTesting != "true" ?: logger.debug("loop related charges: UCR:${getOffenseUCRCode(it)}; itemStatus:" + getItemStatus(it));
                 });
 
-                /*internalTesting != "true" ?: logger.debug("getChargeListUniqueByItemStatus: " + getChargeListUniqueByItemStatus(relatedCharges.findAll({it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it))})).size());
-              for (relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it))}))){
-                internalTesting != "true" ?: logger.debug("inside loop: offenseUCRCodeRelatedOffense:${getOffenseUCRCode(relatedOffense)}");
-              }
-                throw new Exception("testing")*/
 //TODO Items must be unique by ItemStatus
-                for (def Charge relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({ Charge it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it))}))){
-                //for (relatedOffense in relatedCharges) {
-                    internalTesting != "true" ?: logger.debug("inside loop: " + getItemStatus(relatedOffense));
+                for (def Charge relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({ Charge it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it)) }))) {
                     String offenseUCRCodeRelatedOffense = getOffenseUCRCode(relatedOffense);
-                    internalTesting != "true" ?: logger.debug("offenseUCRCodeRelatedOffense:${getOffenseUCRCode(relatedOffense)}");
 
                     //<!-- Begin Property -->
-                    internalTesting != "true" ?: logger.debug("ITEM: offense:${offenseUCRCodeRelatedOffense} contiditons:1:${offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(relatedOffense))}; 2:${offenseUCRCodeRequiredWhenPropertyNoneSeized.contains(getOffenseUCRCode(relatedOffense))}");
-
-                    if (offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(relatedOffense)) || offenseUCRCodeRequiredWhenPropertyNoneSeized.contains(getOffenseUCRCode(relatedOffense))) {
+// TODO <nc:Item> ensure this block does not process when UCR is drug related
+                    if (Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges)) && (offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(relatedOffense)) || offenseUCRCodeRequiredWhenPropertyNoneSeized.contains(getOffenseUCRCode(relatedOffense)))) {
                         fileWriter.println("<nc:Item>");
                         //<!-- Element 14, Type Property Loss/etc  -->
 
@@ -771,27 +771,36 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                             fileWriter.println("<nc:ItemQuantity>${getItemQuantity(relatedOffense)}</nc:ItemQuantity>");
                         }
                         fileWriter.println("</nc:Item>");
+                    } else {
+                        //TODO implement <nc:Substance> when UCR is drug related
+
+                        fileWriter.println("<nc:Substance>");
+                        //<!-- Element 14, Type Property Loss/etc  Substituted for nc:ItemStatus -->
+                        fileWriter.println("<nc:ItemStatus>");
+                        fileWriter.println("<cjis:ItemStatusCode>SEIZED</cjis:ItemStatusCode>");
+                        fileWriter.println("</nc:ItemStatus>");
+                        //<!-- Element 16, Value of Property in US Dollars -->
+                        fileWriter.println("<nc:ItemValue>");
+                        fileWriter.println("<nc:ItemValueAmount>");
+                        fileWriter.println("<nc:Amount>12000</nc:Amount>");
+                        fileWriter.println("</nc:ItemValueAmount>");
+                        //<!-- Element 17, Date Recovered -->
+//                        fileWriter.println("<!--<nc:ItemValueDate>");
+//                        fileWriter.println("<nc:Date>2024-02-09</nc:Date>");
+//                        fileWriter.println("</nc:ItemValueDate>-->");
+                        fileWriter.println("</nc:ItemValue>");
+                        //<!-- Element 15, Property Description -->
+                        fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>10</j:ItemCategoryNIBRSPropertyCategoryCode>");
+                        //<!-- Element 20, Suspected Involved Drug Type -->
+                        fileWriter.println("<j:DrugCategoryCode>E</j:DrugCategoryCode>");
+                        fileWriter.println("<nc:SubstanceQuantityMeasure>");
+                        //<!-- Element 21/22, Estimated Quantity/Fraction -->
+                        fileWriter.println("<nc:MeasureDecimalValue>1.5</nc:MeasureDecimalValue>");
+                        fileWriter.println("<j:SubstanceUnitCode>OZ</j:SubstanceUnitCode>");
+                        fileWriter.println("</nc:SubstanceQuantityMeasure>");
+                        fileWriter.println("</nc:Substance>");
                     }
                 }
-
-
-//TODO delete this block
-
-//		fileWriter.println("<nc:Substance>");
-//			fileWriter.println("<nc:ItemStatus>");
-//				fileWriter.println("<cjis:ItemStatusCode>SEIZED</cjis:ItemStatusCode>");
-//			fileWriter.println("</nc:ItemStatus>");
-//			//<!-- Element 15, Property Description -->
-//			fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>10</j:ItemCategoryNIBRSPropertyCategoryCode>");
-//			//<!-- Element 20, Suspected Involved Drug Type -->
-//			fileWriter.println("<j:DrugCategoryCode>H</j:DrugCategoryCode>");
-//			fileWriter.println("<nc:SubstanceQuantityMeasure>");
-//				//<!-- Element 21/22, Estimated Quantity/Fraction -->
-//				fileWriter.println("<nc:MeasureDecimalValue>1.5</nc:MeasureDecimalValue>");
-//				fileWriter.println("<j:SubstanceUnitCode>GM</j:SubstanceUnitCode>");
-//			fileWriter.println("</nc:SubstanceQuantityMeasure>");
-//		fileWriter.println("</nc:Substance>");
-//  //<!--End Property--> ${}
 
 
                 //for (victim in offenseVictims){
@@ -828,7 +837,6 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                 }
                 fileWriter.println("</nc:Person>");
                 //}
-
 
 
                 for (def Party subject in offenseSubjects) {
@@ -870,7 +878,7 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
 
                 def ArrayList<String> victimOffenseUCRCodes = getVictimOffenseUCRCodes(relatedCharges, victim, victimFilterXrefChargeVictimById)
 
-                if ( !Collections.disjoint( victimOffenseUCRCodes, victimInjuryTypeRequiredUCR) ){
+                if (!Collections.disjoint(victimOffenseUCRCodes, victimInjuryTypeRequiredUCR)) {
                     //  <!-- Element 33, Type Injury -->
                     fileWriter.println("<j:VictimInjury>");
                     fileWriter.println("<j:InjuryCategoryCode>N</j:InjuryCategoryCode>");
@@ -879,9 +887,18 @@ logger.debug("ForceCategoryCode: forceCategoryCode:${forceCategoryCode} relatedO
                 //<!-- Element 25, Type of Victim -->
                 //String victimCategoryCode = getVictimCategoryCode(offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS, victim, offenses, offenseUCRCodeRequiredWhenVictimTypeIsG);
 //TODO is there a better way to determine victimCategoryCode?
-                String victimCategoryCode = offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(relatedCharges.first())) == false ? "I" : "S";
+                String victimCategoryCode = "I";
+                logger.debug("TEST:victimCategoryCode")
+                logger.debug("victimCategoryCodeSocietyRequiredUCR:${victimCategoryCodeSocietyRequiredUCR}")
+                logger.debug("getUCROffenses(relatedCharges)):${getUCROffenses(relatedCharges)}")
+                logger.debug("disjoint: " + Collections.disjoint(victimCategoryCodeSocietyRequiredUCR, getUCROffenses(relatedCharges)))
+                if (Collections.disjoint(victimCategoryCodeSocietyRequiredUCR, getUCROffenses(relatedCharges)) == false) {
+                    victimCategoryCode = "S";
+                }
 
-                victimCategoryCode = offenseUCRCodeRequiredWhenVictimTypeG.contains(getOffenseUCRCode(relatedCharges.first())) == true ? "G" : victimCategoryCode;
+                if (Collections.disjoint(victimCategoryCodeGovernmentRequiredUCR, getUCROffenses(relatedCharges)) == false) {
+                    victimCategoryCode = "G";
+                }
 
                 fileWriter.println("<j:VictimCategoryCode>${victimCategoryCode}</j:VictimCategoryCode>");
                 if (["09A", "09B", "09C", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
@@ -1029,7 +1046,7 @@ protected String getVictimCategoryCode(ArrayList ucrOffensesAgainsSocietyRequire
 
 protected ArrayList<String> getVictimOffenseUCRCodes(ArrayList<Charge> relatedCharges, Party victim, String victimFilterXrefChargeVictimById) {
     def ArrayList<String> victimOffenseUCRCodes = new ArrayList();
-    relatedCharges.findAll({Charge it -> it.collect(victimFilterXrefChargeVictimById, victim.id)}).each({Charge it -> victimOffenseUCRCodes.add(getOffenseUCRCode(it))});
+    relatedCharges.findAll({ Charge it -> it.collect(victimFilterXrefChargeVictimById, victim.id) }).each({ Charge it -> victimOffenseUCRCodes.add(getOffenseUCRCode(it)) });
     return victimOffenseUCRCodes;
 }
 
@@ -1092,7 +1109,7 @@ protected String getRace(Party party, Charge thisOffense) {
     return race;
 }
 
-protected String getItemCategoryCode(Charge thisOffense){
+protected String getItemCategoryCode(Charge thisOffense) {
     return thisOffense.cf_itemCategory ?: "08";
 }
 
