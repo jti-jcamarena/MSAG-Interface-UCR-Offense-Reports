@@ -131,22 +131,22 @@ offensesMap.put("FEDERAL_LIQUOR_OFFENSES", "61A");//failed  The Enumeration cons
 offensesMap.put("FEDERAL_TOBACCO_OFFENSES", "61B");//failed  The Enumeration constraint failed
 offensesMap.put("WILDLIFE_TRAFFICKING", "620");//failed  The Enumeration constraint failed
 //TODO check item status drop down
-offensesMap.put("DRUG-NARCOTIC_VIOLATIONS", "35A");//failed
+offensesMap.put("DRUG-NARCOTIC_VIOLATIONS", "35A");//tested grouped
 //55
 //TODO check item status drop down
-offensesMap.put("DRUG-EQUIPMENT_VIOLATIONS", "35B");//failed
+offensesMap.put("DRUG-EQUIPMENT_VIOLATIONS", "35B");//tested grouped
 offensesMap.put("ESPIONAGE", "103");//failed  The Enumeration constraint failed
 offensesMap.put("FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST", "49A");//failed  The Enumeration constraint failed
 offensesMap.put("FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION", "49B");//failed  The Enumeration constraint failed
 offensesMap.put("FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION", "49C");//failed  The Enumeration constraint failed
 //60
-offensesMap.put("BETTING-WAGERING", "39A");//tested
+offensesMap.put("BETTING-WAGERING", "39A");//tested grouped
 //TODO check item status drop down
-offensesMap.put("GAMBLING-OPERATING_PROMOTING_ASSISTING", "39B");//tested
+offensesMap.put("GAMBLING-OPERATING_PROMOTING_ASSISTING", "39B");//tested grouped
 //TODO check item status drop down
-offensesMap.put("GAMBLING-EQUIPMENT_VIOLATION", "39C");//tested
+offensesMap.put("GAMBLING-EQUIPMENT_VIOLATION", "39C");//tested grouped
 //TODO check item status drop down
-offensesMap.put("SPORTS_TAMPERING", "39D");//tested
+offensesMap.put("SPORTS_TAMPERING", "39D");//tested grouped
 offensesMap.put("TREASON", "101");//failed  The Enumeration constraint failed
 //65
 offensesMap.put("WEAPON_LAW_VIOLATIONS", "520");//failed
@@ -771,7 +771,11 @@ internalTesting != "true" ?: logger.debug(ucrs);
                             fileWriter.println("<nc:ItemQuantity>${getItemQuantity(relatedOffense)}</nc:ItemQuantity>");
                         }
                         fileWriter.println("</nc:Item>");
-                    } else {
+                    }
+                }
+
+                for (def Charge relatedOffense in getChargeListUniqueBySubstanceData(relatedCharges.findAll({ Charge it -> substanceRelatedUCR.contains(getOffenseUCRCode(it)) }))) {
+                    if (!Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges))) {
                         //TODO implement <nc:Substance> when UCR is drug related
 
                         fileWriter.println("<nc:Substance>");
@@ -806,7 +810,7 @@ internalTesting != "true" ?: logger.debug(ucrs);
                 //for (victim in offenseVictims){
                 fileWriter.println("<nc:Person s:id='" + "PersonVictim${victim.id}" + "'>");
                 internalTesting != "true" ?: logger.debug("contains crimeAgainsSociety: " + offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(relatedCharges.first())))
-                if (/*victimCategoryCodesRequireDemographics.contains(getVictimCategoryCode(offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS, victim, offense, offenseUCRCodeRequiredWhenVictimTypeIsG))*/
+                if (
                         offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(relatedCharges.first())) == false
                                 &&
                                 offenseUCRCodeRequiredWhenVictimTypeG.contains(getOffenseUCRCode(relatedCharges.first())) == false
@@ -1153,12 +1157,18 @@ protected String getItemStatus(Charge thisOffense) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
 
-    //itemStatus = itemStatus == null ? "NONE" : itemStatus;
     return itemStatus;
 }
 
+//TODO test method getChargeListUniqueBySubstanceData "DrugCategoryCode + SubstanceUnitCode"
+protected ArrayList<Charge> getChargeListUniqueBySubstanceData(ArrayList<Charge> thisChargeList) {
+    def ArrayList<Charge> newChargeList = new ArrayList();
+    newChargeList.addAll(thisChargeList);
+    return newChargeList.unique({ it -> it.getClass() });
+}
+
 protected ArrayList<Charge> getChargeListUniqueByItemStatus(ArrayList<Charge> thisChargeList) {
-    ArrayList<Charge> newChargeList = new ArrayList();
+    def ArrayList<Charge> newChargeList = new ArrayList();
     newChargeList.addAll(thisChargeList);
     return newChargeList.unique({ it -> "" + getItemStatus(it) + getItemCategoryCode(it) });
 }
