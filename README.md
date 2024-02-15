@@ -67,6 +67,10 @@ Type of Victim must have a value of S = Society/Public when Data Element 24 (Vic
 
 Suspected Drug Type must be entered when Type of Property Loss is 1 and Offense Code is 35A
 
+Missing mandatory segment: each incident must have at least one victim
+Missing mandatory segment: each Offense must have at least one Victim
+
+
 Group A Offense UCR - crimes against Society
 Victim Type G - Government
 IMPORT_VIOLATIONS,G

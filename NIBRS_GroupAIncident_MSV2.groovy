@@ -1,6 +1,7 @@
 import com.sustain.util.RichList;
-import com.sustain.properties.model.SystemProperty
-
+import com.sustain.properties.model.SystemProperty;
+import com.sustain.cases.model.Case;
+import com.sustain.document.model.Document;
 import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.time.LocalDate;
@@ -19,6 +20,7 @@ import com.sustain.entities.custom.CtInterfaceTracking;
 import com.sustain.entities.custom.CtInterfaceTrackingDetail;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
+import com.sustain.expression.Where;
 
 
 // *lastUpdated:02/12/2024
@@ -174,7 +176,6 @@ offensesMap.put("WEAPON_LAW_VIOLATIONS", "520");//failed
 //offensesMap.put("PERJURY", "90M");//review listed as Group B failed  The Enumeration constraint failed
 //offensesMap.put("TRESPASSING", "90J");//review listed as Group B failed  The Enumeration constraint failed
 
-offensesMap.entrySet().key.sort({a,b -> a<=>b}).each({it -> logger.debug(it)})
 
 def String internalTesting = SystemProperty.getValue("nibrs.email.testing") ?: "true";
 def String ucrstatEmailAddress = SystemProperty.getValue("nibrs.email.inbox") ?: "";
@@ -189,6 +190,8 @@ def Timestamp nowTimestamp = Timestamp.valueOf(localDateTime);
 def LocalDateTime localDateTimeStart = localDateTime.with(TemporalAdjusters.firstDayOfMonth()).withHour(0).withMinute(0).withSecond(0).withNano(0);
 def LocalDateTime localDateTimeEnd = localDateTime.with(TemporalAdjusters.lastDayOfMonth()).withHour(23).withMinute(59).withSecond(58).withNano(999999999);
 
+def String batch = "${localDateTime.month}${localDateTime.year}";
+
 _reportingPeriod = "${localDateTimeStart} : ${localDateTimeEnd}".toString();
 _lastDayOfMonth = "lastDayOfTheMonth:${localDate == localDateLastDayOfMonth} - ${localDateLastDayOfMonth}".toString();
 
@@ -201,7 +204,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     def String rootPath = "\\\\edc-isilon-smb\\ags2docsuat\\NIBRS";
     def LocalDate reportDate = LocalDate.now();
     def String reportFileNamePrefix = "EAttorney_${reportType}_${reportDate.getMonth()}_${reportDate.getDayOfMonth()}_${reportDate.getYear()}_".toString();
-    def String reportFileNameSuffix = internalTesting == "true" ? ".xml.txt" : ".xml";
+    def String reportFileNameSuffix =  ".xml";// internalTesting == "true" ? ".xml.txt" : ".xml";
 
     def File rootDir = new File(rootPath);
 
@@ -362,11 +365,15 @@ PrintWriter fileWriter = new PrintWriter(reportFile);
         whereCharge.addEquals("updateReason", "NIBRS");
     }
 
+
+
     ArrayList<Charge> offensesAll = DomainObject.find(Charge.class, whereCharge)
             .findAll({ it ->
                 it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() && !offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) || offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) ||
                         it.id == it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id != null }) || !it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").findAll({ id -> id == it.id }).isEmpty()
             });
+
+
 
     ArrayList<Charge> offenses = offensesAll;
 
@@ -400,7 +407,7 @@ PrintWriter fileWriter = new PrintWriter(reportFile);
         relatedCharges.add(offense);
         relatedCharges.addAll(offense.collect("xrefs[entityType=='Charge' and refType=='REL'].ref"));
 
-        String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCounty]).getValue("judicialDistrict");
+        String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCounty]).getValue("judicialDistrict") ?: "";
 
         String offenseUCRCode = getOffenseUCRCode(offense);
         HashSet<Party> offenseVictims = getOffenseSubjectVictims(offensesAll, offenseUCRCode, victimFilterXrefChargeVictim)
@@ -869,7 +876,7 @@ PrintWriter fileWriter = new PrintWriter(reportFile);
                 attachments = new Attachments(attachmentFiles);
 
                 if (_saveReportToCase == true) {
-                    Document reportDoc = createDocument(reportFile, cse, offenses);
+                    Document reportDoc = createDocument(reportFile, cse, offenses, batch, caseJudicialDistrictCode);
                     addDocumentToDocuments(cse, reportDoc);
                 }
 
@@ -1165,12 +1172,15 @@ protected boolean isExceptionalClearanceAtoE(Charge thisOffense) {
     }
 }
 
-protected Document createDocument(File fileAttachment, Case cse, List<Charge> charges) {
+protected Document createDocument(File fileAttachment, Case cse, List<Charge> charges, String batch, String caseJudicialDistrictCode) {
     Document reportDocument = new Document();
     reportDocument.case = cse;
     reportDocument.docDef = DomainObject.find(DocDef.class, "shortName", "NIBRSA").find({ it -> it != null });
     reportDocument.memo = charges.id.join("_");
     reportDocument.reviewStatus = "PRIVILEGED";
+    reportDocument.batchSource = "NIBRSA";
+    reportDocument.batch = batch;
+    reportDocument.filedByText = caseJudicialDistrictCode;
     reportDocument.saveOrUpdate();
     reportDocument.store(fileAttachment);
     return reportDocument;
