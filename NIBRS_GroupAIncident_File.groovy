@@ -27,7 +27,7 @@ _outputMessage = "Month:${_report_month} Year:${_report_year} Jurisdiction:${_ju
 
 if (!nibrsReportDocuments.isEmpty()) {
     def ArrayList<File> reportFiles = nibrsReportDocuments.findAll({ Document document -> document.file != null }).file;
-    def String filePrefix = "${_report_month}${_report_year}_${_jurisdiction}";
+    def String filePrefix = "${_report_month}${_report_year}_";
     def String fileSuffix = ".zip";
 
     def File zipFile = File.createTempFile(filePrefix, fileSuffix);
