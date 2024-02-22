@@ -249,12 +249,16 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
     ArrayList<Charge> offensesAll = DomainObject.find(Charge.class, whereCharge)
             .findAll({ it ->
-                it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() && !offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) || offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) ||
-                        it.id == it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id != null }) || !it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").findAll({ id -> id == it.id }).isEmpty()
+                it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() && !offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) ||
+                        offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) ||
+                        it.id == it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id != null }) ||
+                        !it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").findAll({ id -> id == it.id }).isEmpty()
             });
 
     ArrayList<Charge> offenses = offensesAll;
 
+    logger.debug("Cases: ${offensesAll.associatedParty.case.unique({it -> it.id})}");
+    logger.debug("Charges: ${offensesAll}");
 
     String victimFilterXrefChargeVictim = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null]";
     String victimFilterXrefChargeVictimById = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null && id == #p1]";
@@ -272,8 +276,10 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     if (offenses.isEmpty()) {
         throw new Exception("Offenses failed validation; empty");
     }
-
+    def ArrayList<Charge> processedRelatedOffenses = new ArrayList<>();
     for (def Charge offense in offenses) {
+        logger.debug("offense victims: " + offense.collect(victimFilterXrefChargeVictim))
+        processedRelatedOffenses.add(offense);
         Case cse = offense.associatedParty.case;
         String caseCounty = cse.county;
 
@@ -297,13 +303,15 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             PrintWriter fileWriter = new PrintWriter(reportFile);
             HashSet<Party> offenseSubjects = new HashSet(getOffenseSubjects(offense));
             ArrayList<Party> offenseSubjectsArrayList = new ArrayList(offenseSubjects);
+            def Document reportDoc;
 
             if (offenseSubjects.isEmpty()) {
                 throw new Exception("OffenseSubjects failed validation; empty");
             }
-            if (offenseVictims.isEmpty()) {
-                throw new Exception("OffenseVictims failed validation; empty");
-            }
+
+//            if (offenseVictims.isEmpty()) {
+//                throw new Exception("OffenseVictims failed validation; empty");
+//            }
 
             try {
                 if (!Files.exists(rootDir?.toPath())) {
@@ -396,18 +404,15 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 relatedCharges = getRelatedChargesLimit10(relatedCharges);
 
                 if (Collections.disjoint(getUCROffenses(relatedCharges), personAndPropertyUCROffenses) == false &&
-                Collections.disjoint(getUCROffenses(relatedCharges), societyUCROffenses) == false) {
+                        Collections.disjoint(getUCROffenses(relatedCharges), societyUCROffenses) == false) {
                     relatedCharges = getRelatedChargesLimitedByExcludingListCharges(relatedCharges, societyUCROffenses);
                 }
                 for (def Charge relatedOffense in relatedCharges) {
-//                    if (relatedOffense.updateReason != "NIBRS") {
-//                        relatedOffense.updateReason = "NIBRS";
-//                        relatedOffense.saveOrUpdate();
-//                    }
-//                    if (relatedOffense.cf_judicialDistrictCode == null || relatedOffense.cf_judicialDistrictCode != caseJudicialDistrictCode) {
-//                        relatedOffense.cf_judicialDistrictCode = caseJudicialDistrictCode;
-//                        relatedOffense.saveOrUpdate();
-//                    }
+
+                    relatedOffense.setUpdateReason("NIBRS");
+                    relatedOffense.setCf_judicialDistrictCode(caseJudicialDistrictCode);
+
+
                     fileWriter.println("<j:Offense s:id='" + "Offense${relatedOffense.id}" + "'>");
                     //<!-- Element 6, Offense Code -->
                     String relatedOffenseUCRCode = getOffenseUCRCode(relatedOffense);
@@ -695,10 +700,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 attachmentFiles = new ArrayList<>(Arrays.asList(reportFile)).toArray(File[]);
                 attachments = new Attachments(attachmentFiles);
 
-                if (_saveReportToCase == true) {
-                    Document reportDoc = createDocument(reportFile, cse, offenses, batch, caseJudicialDistrictCode);
-                    addDocumentToDocuments(cse, reportDoc);
-                }
+                reportDoc = createDocument(reportFile, cse, offenses, batch, caseJudicialDistrictCode);
+                addDocumentToDocuments(cse, reportDoc);
 
                 if (_sendEmail == true) {
                     mailManager.sendMailToAll(toEmails, ccEmails, bccEmails, emailSubject, emailBody, attachments);
@@ -706,11 +709,13 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 _fileOut = reportFile;
                 Files.deleteIfExists(reportPath);
             } catch (Exception exception) {
+                logger.debug("exception:${exception.getMessage()}")
                 interfaceTracking.setResult("FAIL");
                 interfaceTrackingDetails.add(createTrackingDetail(interfaceTracking, nowTimestamp, "", "", "", exception.getMessage()));
             } finally {
-                //!interfaceTracking.result?.isEmpty() ?: interfaceTracking.setResult("SUCCESS");
-                interfaceTracking.setResult("SUCCESS");
+                logger.debug("finally:")
+                !interfaceTracking.result?.isEmpty() ?: interfaceTracking.setResult("SUCCESS");
+                DomainObject.saveOrUpdateAll(processedRelatedOffenses);
                 DomainObject.saveOrUpdate(interfaceTracking);
                 DomainObject.saveOrUpdateAll(interfaceTrackingDetails);
             }
@@ -734,14 +739,6 @@ protected CtInterfaceTrackingDetail createTrackingDetail(CtInterfaceTracking int
 protected String getOffenseUCRCode(Charge offense) {
     String code = offense.collect("chargeAttributes").find({ it -> it != null });
     return code != null ? code?.trim() : "";
-}
-
-protected String getVictimCategoryCode(ArrayList ucrOffensesAgainsSocietyRequireVictimTypeS, Party victim, Charge offense, ArrayList ucrOffenseUCRCodeRequiredWhenVictimTypeIsG) {
-    String victimCategoryCode = victim.person.personType == "PERSON" ? "I" : "";
-    victimCategoryCode = victim.person.personType == "BUSINESS" ? "B" : victimCategoryCode;
-    victimCategoryCode = ucrOffensesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(offense)) ? "S" : victimCategoryCode;
-    victimCategoryCode = ucrOffenseUCRCodeRequiredWhenVictimTypeIsG.contains(getOffenseUCRCode(offense)) ? "G" : victimCategoryCode;
-    return victimCategoryCode;
 }
 
 protected ArrayList<String> getVictimOffenseUCRCodes(ArrayList<Charge> relatedCharges, Party victim, String victimFilterXrefChargeVictimById) {
@@ -852,7 +849,7 @@ protected String getItemStatus(Charge thisOffense) {
     if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION,IDENTITY_THEFT,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
-
+    thisOffense.cf_itemStatus = itemStatus;
     return itemStatus;
 }
 
@@ -964,17 +961,6 @@ protected List<Charge> getRelatedChargesLimitedByExcludingCrimesAgainsSociety(Ar
     return theseChargesFiltered;
 }
 
-
-protected List<Charge> getRelatedChargesLimitedByExcludingCrimesAgainsGovernment(ArrayList<Charge> theseCharges, ArrayList<String> crimesAgainstGovernment) {
-    ArrayList<Charge> theseChargesFiltered = new ArrayList();
-    if (!theseCharges.findAll({ it -> crimesAgainstGovernment.contains(getOffenseUCRCode(it)) }).isEmpty()) {
-        theseChargesFiltered.addAll(theseCharges.find({ it -> !crimesAgainstGovernment.contains(getOffenseUCRCode(it)) }))
-    } else {
-        theseChargesFiltered.addAll(theseCharges);
-    }
-    return theseChargesFiltered;
-}
-
 protected List<Charge> getRelatedChargesLimit10(ArrayList<Charge> theseCharges) {
     theseCharges.unique({ it -> getOffenseUCRCode(it) });
     if (theseCharges.size() > 10) {
@@ -1051,5 +1037,6 @@ protected String getForceCategoryCode(Charge thisOffense) {
             !forceCategoryCodeWeaponViolations.contains(forceCategoryCode)) {
         forceCategoryCode = "35";
     }
+    thisOffense.cf_forceCategory = forceCategoryCode;
     return forceCategoryCode;
 }
