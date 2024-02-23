@@ -27,6 +27,8 @@ import com.sustain.person.model.Person;
 
 // *lastUpdated:02/20/2024
 
+def Long defaultPersonId = 35291L;
+
 //Person offenses:
 def ArrayList<String> personUCROffenses =
         Arrays.asList("RAPE,JUSTIFIABLE_HOMICIDE,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,SODOMY,RAPE-STATUTORY,ASSAULT-SIMPLE,FONDLING,INCEST,MANSLAUGHTER_NONNEGLIGENT-MURDER,SEX_ASSAULT-OBJECT,KIDNAPPING-ABDUCTION,AGGRAVATED_ASSAULT,INTIMIDATION,MANSLAUGHTER_NEGLIGENT".split(","));
@@ -156,7 +158,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     def String rootPath = "\\\\edc-isilon-smb\\ags2docsuat\\NIBRS";
     def LocalDate reportDate = LocalDate.now();
     def String reportFileNamePrefix = "EAttorney_${reportType}_${reportDate.getMonth()}_${reportDate.getDayOfMonth()}_${reportDate.getYear()}_".toString();
-    def String reportFileNameSuffix = ".xml";// internalTesting == "true" ? ".xml.txt" : ".xml";
+    def String reportFileNameSuffix = ".xml";
 
     def File rootDir = new File(rootPath);
 
@@ -246,19 +248,14 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         whereCharge.addEquals("updateReason", "NIBRS");
     }
 
-
-    ArrayList<Charge> offensesAll = DomainObject.find(Charge.class, whereCharge)
-            .findAll({ it ->
-                it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() && !offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) ||
-                        offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(it)) ||
-                        it.id == it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id != null }) ||
-                        !it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").findAll({ id -> id == it.id }).isEmpty()
+    ArrayList<Charge> offenses = DomainObject.find(Charge.class, whereCharge)
+            .findAll({ Charge it ->
+                it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() ||
+                        it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id == it.id }) != null
             });
 
-    ArrayList<Charge> offenses = offensesAll;
-
-    logger.debug("Cases: ${offensesAll.associatedParty.case.unique({it -> it.id})}");
-    logger.debug("Charges: ${offensesAll}");
+    logger.debug("Cases: ${offenses.associatedParty.case.unique({ it -> it.id })}");
+    logger.debug("Charges: ${offenses}");
 
     String victimFilterXrefChargeVictim = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null]";
     String victimFilterXrefChargeVictimById = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null && id == #p1]";
@@ -278,7 +275,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     }
     def ArrayList<Charge> processedRelatedOffenses = new ArrayList<>();
     for (def Charge offense in offenses) {
-        logger.debug("offense victims: " + offense.collect(victimFilterXrefChargeVictim))
+
         processedRelatedOffenses.add(offense);
         Case cse = offense.associatedParty.case;
         String caseCounty = cse.county;
@@ -290,12 +287,10 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCounty]).getValue("judicialDistrict") ?: "";
 
         String offenseUCRCode = getOffenseUCRCode(offense);
-        HashSet<Party> offenseVictims = getOffenseSubjectVictims(offensesAll, offenseUCRCode, victimFilterXrefChargeVictim)
-                .findAll({ it ->
-                    (offenseUCRCode == statutoryRapeUCR && getAge(it) < 18) || offenseUCRCode != statutoryRapeUCR
-                });
+        def ArrayList<Party> offenseVictims = getOffenseVictims(offense, victimFilterXrefChargeVictim);
 
-        ArrayList<Party> offenseVictimsArrayList = new ArrayList(offenseVictims);
+        logger.debug("offense victims xref: " + offense.collect(victimFilterXrefChargeVictim));
+        logger.debug("offense victims default: ${offenseVictims}");
 
         for (def Party victim in offenseVictims) {
             Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_x${relatedCharges.size()}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
@@ -305,12 +300,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             ArrayList<Party> offenseSubjectsArrayList = new ArrayList(offenseSubjects);
             def Document reportDoc;
 
-            if (offenseSubjects.isEmpty()) {
-                throw new Exception("OffenseSubjects failed validation; empty");
-            }
-
-//            if (offenseVictims.isEmpty()) {
-//                throw new Exception("OffenseVictims failed validation; empty");
+//            if (offenseSubjects.isEmpty()) {
+//                throw new Exception("OffenseSubjects failed validation; empty");
 //            }
 
             try {
@@ -324,7 +315,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 fileWriter.println("<cjis:MessageDateTime>${incidentDateTimeFormatted}</cjis:MessageDateTime>");
                 //<!-- Message ID -->
                 fileWriter.println("<cjis:MessageIdentification>");
-                fileWriter.println("<nc:IdentificationID>${cse}-${offense}-${victim}</nc:IdentificationID>");
+                fileWriter.println("<nc:IdentificationID>${cse}-${offense}</nc:IdentificationID>");
                 fileWriter.println("</cjis:MessageIdentification>");
                 //<!-- NIBRS IEPD Version -->
                 fileWriter.println("<cjis:MessageImplementationVersion>2019.2</cjis:MessageImplementationVersion>");
@@ -359,7 +350,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 fileWriter.println("<nc:Incident>");
                 fileWriter.println("<nc:ActivityIdentification>");
                 //<!-- Element 2, Incident Number -->
-                fileWriter.println("<nc:IdentificationID>${offense.id}-${victim.id}</nc:IdentificationID>");
+                fileWriter.println("<nc:IdentificationID>${offense.id}</nc:IdentificationID>");
                 fileWriter.println("</nc:ActivityIdentification>");
                 fileWriter.println("<nc:ActivityDate>");
                 //<!-- Element 3, Incident Date and Hour 2016-02-19T10:00:00 -->
@@ -468,13 +459,10 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 fileWriter.println("</nc:Location>");
                 //}
 
-
-//TODO Items must be unique by ItemStatus
                 for (def Charge relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({ Charge it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it)) }))) {
                     String offenseUCRCodeRelatedOffense = getOffenseUCRCode(relatedOffense);
 
                     //<!-- Begin Property -->
-// TODO <nc:Item> ensure this block does not process when UCR is drug related
                     if (Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges)) && (offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(relatedOffense)) || offenseUCRCodeRequiredWhenPropertyNoneSeized.contains(getOffenseUCRCode(relatedOffense)))) {
                         fileWriter.println("<nc:Item>");
                         //<!-- Element 14, Type Property Loss/etc  -->
@@ -505,23 +493,23 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
                 for (def Charge relatedOffense in getChargeListUniqueBySubstanceData(relatedCharges.findAll({ Charge it -> substanceRelatedUCR.contains(getOffenseUCRCode(it)) }))) {
                     if (!Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges))) {
-                        //TODO implement <nc:Substance> when UCR is drug related
-
                         fileWriter.println("<nc:Substance>");
                         //<!-- Element 14, Type Property Loss/etc  Substituted for nc:ItemStatus -->
                         fileWriter.println("<nc:ItemStatus>");
                         fileWriter.println("<cjis:ItemStatusCode>SEIZED</cjis:ItemStatusCode>");
                         fileWriter.println("</nc:ItemStatus>");
                         //<!-- Element 16, Value of Property in US Dollars -->
-                        fileWriter.println("<nc:ItemValue>");
-                        fileWriter.println("<nc:ItemValueAmount>");
-                        fileWriter.println("<nc:Amount>12000</nc:Amount>");
-                        fileWriter.println("</nc:ItemValueAmount>");
-                        //<!-- Element 17, Date Recovered -->
+                        if (getOffenseUCRCode(relatedOffense) == "DRUG-NARCOTIC_VIOLATIONS" && relatedCharges.size() > 1 || getOffenseUCRCode(relatedOffense) != "DRUG-NARCOTIC_VIOLATIONS") {
+                            fileWriter.println("<nc:ItemValue>");
+                            fileWriter.println("<nc:ItemValueAmount>");
+                            fileWriter.println("<nc:Amount>12000</nc:Amount>");
+                            fileWriter.println("</nc:ItemValueAmount>");
+                            //<!-- Element 17, Date Recovered -->
 //                        fileWriter.println("<!--<nc:ItemValueDate>");
 //                        fileWriter.println("<nc:Date>2024-02-09</nc:Date>");
 //                        fileWriter.println("</nc:ItemValueDate>-->");
-                        fileWriter.println("</nc:ItemValue>");
+                            fileWriter.println("</nc:ItemValue>");
+                        }
                         //<!-- Element 15, Property Description -->
                         fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>10</j:ItemCategoryNIBRSPropertyCategoryCode>");
                         //<!-- Element 20, Suspected Involved Drug Type -->
@@ -597,7 +585,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 fileWriter.println("<j:Victim s:id='" + "Victim${victim.id}" + "'>");
                 fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}" + "'/>");
                 //<!-- Element 23, Victim Sequence Number -->
-                fileWriter.println("<j:VictimSequenceNumberText>${offenseVictimsArrayList.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
+//                fileWriter.println("<j:VictimSequenceNumberText>${offenseVictimsArrayList.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
+                fileWriter.println("<j:VictimSequenceNumberText>${offenseVictims.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
 
                 //TODO review victim injury type when victim related offense meets criteria
 
@@ -715,6 +704,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             } finally {
                 logger.debug("finally:")
                 !interfaceTracking.result?.isEmpty() ?: interfaceTracking.setResult("SUCCESS");
+                DomainObject.saveOrUpdate(cse);
                 DomainObject.saveOrUpdateAll(processedRelatedOffenses);
                 DomainObject.saveOrUpdate(interfaceTracking);
                 DomainObject.saveOrUpdateAll(interfaceTrackingDetails);
@@ -753,10 +743,29 @@ protected ArrayList<Party> getOffenseSubjects(Charge offense) {
     return ucrOffenseSubjects;
 }
 
-protected ArrayList<Party> getOffenseSubjectVictims(ArrayList<Charge> offensesAll, String ucrOffense, String victimFilterXrefChargeVictim) {
-    ArrayList<Party> ucrOffenseVictims = new ArrayList();
-    offensesAll.findAll({ Charge offense -> getOffenseUCRCode(offense) == ucrOffense })?.each({ offense -> ucrOffenseVictims.addAll(offense.collect(victimFilterXrefChargeVictim)) });
-    return ucrOffenseVictims;
+protected Party createOffenseVictim(Case cse) {
+    def Party offenseVictim = new Party()
+    offenseVictim.setCase(cse);
+    offenseVictim.setPartyType("VIC");
+    offenseVictim.setStatus("ACTIVE")
+    offenseVictim.setPerson(Person.get(35291L));
+    DomainObject.saveOrUpdate(offenseVictim);
+    cse.add(offenseVictim, "parties");
+    return offenseVictim;
+}
+
+protected ArrayList<Party> getOffenseVictims(Charge offense, String victimFilterXrefChargeVictim) {
+    def Case cse = offense.associatedParty.case;
+    def ArrayList<Party> ucrOffenseVictims = new ArrayList();
+    def RichList<Party> ucrOffenseVictimsList = offense.collect(victimFilterXrefChargeVictim);
+    if (!ucrOffenseVictimsList.isEmpty()) {
+        ucrOffenseVictims.addAll(ucrOffenseVictimsList);
+    } else {
+        def Party offenseVictim = createOffenseVictim(cse);
+        ucrOffenseVictims.add(offenseVictim);
+        offense.addCrossReference(offenseVictim, "VICTIMOF")
+    }
+    return ucrOffenseVictims?.sort({ a, b -> a.id <=> b.id });
 }
 
 protected Integer getAge(Party party) {
