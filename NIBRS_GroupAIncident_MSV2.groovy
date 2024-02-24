@@ -287,244 +287,245 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCounty]).getValue("judicialDistrict") ?: "";
 
         String offenseUCRCode = getOffenseUCRCode(offense);
-        def ArrayList<Party> offenseVictims = getOffenseVictims(offense, victimFilterXrefChargeVictim);
+//        def ArrayList<Party> offenseVictims = getOffenseVictims(offense, victimFilterXrefChargeVictim);
+        def ArrayList<Party> offenseVictims = getOffenseVictims(relatedCharges, victimFilterXrefChargeVictim);
 
         logger.debug("offense victims xref: " + offense.collect(victimFilterXrefChargeVictim));
         logger.debug("offense victims default: ${offenseVictims}");
 
-        for (def Party victim in offenseVictims) {
-            Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_x${relatedCharges.size()}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
-            File reportFile = reportPath.toFile();
-            PrintWriter fileWriter = new PrintWriter(reportFile);
-            HashSet<Party> offenseSubjects = new HashSet(getOffenseSubjects(offense));
-            ArrayList<Party> offenseSubjectsArrayList = new ArrayList(offenseSubjects);
-            def Document reportDoc;
+//        for (def Party victim in offenseVictims) {
+        Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_x${relatedCharges.size()}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
+        File reportFile = reportPath.toFile();
+        PrintWriter fileWriter = new PrintWriter(reportFile);
+        HashSet<Party> offenseSubjects = new HashSet(getOffenseSubjects(offense));
+        ArrayList<Party> offenseSubjectsArrayList = new ArrayList(offenseSubjects);
+        def Document reportDoc;
 
 //            if (offenseSubjects.isEmpty()) {
 //                throw new Exception("OffenseSubjects failed validation; empty");
 //            }
 
-            try {
-                if (!Files.exists(rootDir?.toPath())) {
-                    rootDir.mkdir();
-                }
+        try {
+            if (!Files.exists(rootDir?.toPath())) {
+                rootDir.mkdir();
+            }
 
-                fileWriter.println("""<nibrs:Submission xmlns:nibrs="http://fbi.gov/cjis/nibrs/4.2" xmlns:cjis="http://fbi.gov/cjis/1.0" xmlns:cjiscodes="http://fbi.gov/cjis/cjis-codes/1.0" xmlns:i="http://release.niem.gov/niem/appinfo/3.0/" xmlns:ucr="http://release.niem.gov/niem/codes/fbi_ucr/3.2/" xmlns:j="http://release.niem.gov/niem/domains/jxdm/5.2/" xmlns:term="http://release.niem.gov/niem/localTerminology/3.0/" xmlns:nc="http://release.niem.gov/niem/niem-core/3.0/" xmlns:niem-xsd="http://release.niem.gov/niem/proxy/xsd/3.0/" xmlns:s="http://release.niem.gov/niem/structures/3.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:nibrscodes="http://fbi.gov/cjis/nibrs/nibrs-codes/4.2" xmlns:msibrs="http://www.beyond2020.com/msibrs/1.0" xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/msibrs.xsd">""");
-                fileWriter.println("<cjis:MessageMetadata>");
-                //<!-- Message Timestamp -->
-                fileWriter.println("<cjis:MessageDateTime>${incidentDateTimeFormatted}</cjis:MessageDateTime>");
-                //<!-- Message ID -->
-                fileWriter.println("<cjis:MessageIdentification>");
-                fileWriter.println("<nc:IdentificationID>${cse}-${offense}</nc:IdentificationID>");
-                fileWriter.println("</cjis:MessageIdentification>");
-                //<!-- NIBRS IEPD Version -->
-                fileWriter.println("<cjis:MessageImplementationVersion>2019.2</cjis:MessageImplementationVersion>");
-                fileWriter.println("<cjis:MessageSubmittingOrganization>");
-                fileWriter.println("<j:OrganizationAugmentation>");
-                fileWriter.println("<j:OrganizationORIIdentification>");
-                //<!-- Submitting Agency ORI -->
-                fileWriter.println("<nc:IdentificationID>${submittingAgencyORINumber}</nc:IdentificationID>");
-                fileWriter.println("</j:OrganizationORIIdentification>");
-                fileWriter.println("</j:OrganizationAugmentation>");
-                fileWriter.println("</cjis:MessageSubmittingOrganization>");
-                fileWriter.println("</cjis:MessageMetadata>");
-                fileWriter.println("<nibrs:Report>");
-                fileWriter.println("<nibrs:ReportHeader>");
-                //<!-- Submission Type -->
-                fileWriter.println("<nibrs:NIBRSReportCategoryCode>GROUP A INCIDENT REPORT</nibrs:NIBRSReportCategoryCode>");
-                //<!-- Submission Action Type -->
-                fileWriter.println("<nibrs:ReportActionCategoryCode>${reportActionCategoryCode}</nibrs:ReportActionCategoryCode>");
-                //<!-- Year/Month Of Report -->
-                fileWriter.println("<nibrs:ReportDate>");
-                fileWriter.println("<nc:YearMonthDate>${localDate.format(yearMonthFomatter)}</nc:YearMonthDate>");
-                fileWriter.println("</nibrs:ReportDate>");
-                fileWriter.println("<nibrs:ReportingAgency>");
-                fileWriter.println("<j:OrganizationAugmentation>");
-                fileWriter.println("<j:OrganizationORIIdentification>");
-                //<!-- Element 1, ORI Code, Owning Agency ORI -->
-                fileWriter.println("<nc:IdentificationID>${owningAgencyORINumber}</nc:IdentificationID>");
-                fileWriter.println("</j:OrganizationORIIdentification>");
-                fileWriter.println("</j:OrganizationAugmentation>");
-                fileWriter.println("</nibrs:ReportingAgency>");
-                fileWriter.println("</nibrs:ReportHeader>");
-                fileWriter.println("<nc:Incident>");
-                fileWriter.println("<nc:ActivityIdentification>");
-                //<!-- Element 2, Incident Number -->
-                fileWriter.println("<nc:IdentificationID>${offense.id}</nc:IdentificationID>");
-                fileWriter.println("</nc:ActivityIdentification>");
-                fileWriter.println("<nc:ActivityDate>");
-                //<!-- Element 3, Incident Date and Hour 2016-02-19T10:00:00 -->
-                fileWriter.println("<nc:DateTime>${incidentDateTimeFormatted}</nc:DateTime>");
-                //<!-- Element 3, Incident Date if Hour is Unknown 2016-02-19 -->
-                //<!-- <nc:Date>2016-02-19</nc:Date> -->
-                fileWriter.println("</nc:ActivityDate>");
-                fileWriter.println("<cjis:IncidentAugmentation>");
-                //<!-- Element 3, IncidentReportDateIndicator is true to designate that the ActivityDate is the Report Date rather than the Incident Date -->
-                fileWriter.println("<cjis:IncidentReportDateIndicator>${incidentReportDateIndicator}</cjis:IncidentReportDateIndicator>");
-                // <!-- Element 2A, Cargo Theft Indicator: True/False-->
+            fileWriter.println("""<nibrs:Submission xmlns:nibrs="http://fbi.gov/cjis/nibrs/4.2" xmlns:cjis="http://fbi.gov/cjis/1.0" xmlns:cjiscodes="http://fbi.gov/cjis/cjis-codes/1.0" xmlns:i="http://release.niem.gov/niem/appinfo/3.0/" xmlns:ucr="http://release.niem.gov/niem/codes/fbi_ucr/3.2/" xmlns:j="http://release.niem.gov/niem/domains/jxdm/5.2/" xmlns:term="http://release.niem.gov/niem/localTerminology/3.0/" xmlns:nc="http://release.niem.gov/niem/niem-core/3.0/" xmlns:niem-xsd="http://release.niem.gov/niem/proxy/xsd/3.0/" xmlns:s="http://release.niem.gov/niem/structures/3.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:nibrscodes="http://fbi.gov/cjis/nibrs/nibrs-codes/4.2" xmlns:msibrs="http://www.beyond2020.com/msibrs/1.0" xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/msibrs.xsd">""");
+            fileWriter.println("<cjis:MessageMetadata>");
+            //<!-- Message Timestamp -->
+            fileWriter.println("<cjis:MessageDateTime>${incidentDateTimeFormatted}</cjis:MessageDateTime>");
+            //<!-- Message ID -->
+            fileWriter.println("<cjis:MessageIdentification>");
+            fileWriter.println("<nc:IdentificationID>${cse}-${offense}</nc:IdentificationID>");
+            fileWriter.println("</cjis:MessageIdentification>");
+            //<!-- NIBRS IEPD Version -->
+            fileWriter.println("<cjis:MessageImplementationVersion>2019.2</cjis:MessageImplementationVersion>");
+            fileWriter.println("<cjis:MessageSubmittingOrganization>");
+            fileWriter.println("<j:OrganizationAugmentation>");
+            fileWriter.println("<j:OrganizationORIIdentification>");
+            //<!-- Submitting Agency ORI -->
+            fileWriter.println("<nc:IdentificationID>${submittingAgencyORINumber}</nc:IdentificationID>");
+            fileWriter.println("</j:OrganizationORIIdentification>");
+            fileWriter.println("</j:OrganizationAugmentation>");
+            fileWriter.println("</cjis:MessageSubmittingOrganization>");
+            fileWriter.println("</cjis:MessageMetadata>");
+            fileWriter.println("<nibrs:Report>");
+            fileWriter.println("<nibrs:ReportHeader>");
+            //<!-- Submission Type -->
+            fileWriter.println("<nibrs:NIBRSReportCategoryCode>GROUP A INCIDENT REPORT</nibrs:NIBRSReportCategoryCode>");
+            //<!-- Submission Action Type -->
+            fileWriter.println("<nibrs:ReportActionCategoryCode>${reportActionCategoryCode}</nibrs:ReportActionCategoryCode>");
+            //<!-- Year/Month Of Report -->
+            fileWriter.println("<nibrs:ReportDate>");
+            fileWriter.println("<nc:YearMonthDate>${localDate.format(yearMonthFomatter)}</nc:YearMonthDate>");
+            fileWriter.println("</nibrs:ReportDate>");
+            fileWriter.println("<nibrs:ReportingAgency>");
+            fileWriter.println("<j:OrganizationAugmentation>");
+            fileWriter.println("<j:OrganizationORIIdentification>");
+            //<!-- Element 1, ORI Code, Owning Agency ORI -->
+            fileWriter.println("<nc:IdentificationID>${owningAgencyORINumber}</nc:IdentificationID>");
+            fileWriter.println("</j:OrganizationORIIdentification>");
+            fileWriter.println("</j:OrganizationAugmentation>");
+            fileWriter.println("</nibrs:ReportingAgency>");
+            fileWriter.println("</nibrs:ReportHeader>");
+            fileWriter.println("<nc:Incident>");
+            fileWriter.println("<nc:ActivityIdentification>");
+            //<!-- Element 2, Incident Number -->
+            fileWriter.println("<nc:IdentificationID>${offense.id}</nc:IdentificationID>");
+            fileWriter.println("</nc:ActivityIdentification>");
+            fileWriter.println("<nc:ActivityDate>");
+            //<!-- Element 3, Incident Date and Hour 2016-02-19T10:00:00 -->
+            fileWriter.println("<nc:DateTime>${incidentDateTimeFormatted}</nc:DateTime>");
+            //<!-- Element 3, Incident Date if Hour is Unknown 2016-02-19 -->
+            //<!-- <nc:Date>2016-02-19</nc:Date> -->
+            fileWriter.println("</nc:ActivityDate>");
+            fileWriter.println("<cjis:IncidentAugmentation>");
+            //<!-- Element 3, IncidentReportDateIndicator is true to designate that the ActivityDate is the Report Date rather than the Incident Date -->
+            fileWriter.println("<cjis:IncidentReportDateIndicator>${incidentReportDateIndicator}</cjis:IncidentReportDateIndicator>");
+            // <!-- Element 2A, Cargo Theft Indicator: True/False-->
 
-                if (Collections.disjoint(Arrays.asList("ROBBERY,EXTORTION-BLACKMAIL,BURGLARY-BREAKING_ENTERING,LARCENY-FROM_BUILDING,LARCENY-FROM_AUTO,LARCENY,MOTOR_VEHICLE_THEFT,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-IMPERSONATION,FRAUD-BY_WIRE,IDENTITY_THEFT,HACKING-COMPUTER_INVASION,BRIBERY,EMBEZZLEMENT".split(",")), getUCROffenses(relatedCharges)) == false) {
-                    fileWriter.println("<j:OffenseCargoTheftIndicator>true</j:OffenseCargoTheftIndicator>");
-                }
-                fileWriter.println("</cjis:IncidentAugmentation>");
-                fileWriter.println("<j:IncidentAugmentation>");
-                //<!-- Element 4, Cleared Exceptionally -->
-                String incidentExceptionalClearanceCodeValue = offense.cf_indicentExceptionalClear != null && !offense.cf_indicentExceptionalClear.isEmpty() ? offense.cf_indicentExceptionalClear : incidentExceptionalClearanceCode[5];
-                if (["JUSTIFIABLE_HOMICIDE"].contains(getOffenseUCRCode(offense))) {
-                    incidentExceptionalClearanceCodeValue = "N";
-                }
-                fileWriter.println("<j:IncidentExceptionalClearanceCode>${incidentExceptionalClearanceCodeValue}</j:IncidentExceptionalClearanceCode>");
+            if (Collections.disjoint(Arrays.asList("ROBBERY,EXTORTION-BLACKMAIL,BURGLARY-BREAKING_ENTERING,LARCENY-FROM_BUILDING,LARCENY-FROM_AUTO,LARCENY,MOTOR_VEHICLE_THEFT,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-IMPERSONATION,FRAUD-BY_WIRE,IDENTITY_THEFT,HACKING-COMPUTER_INVASION,BRIBERY,EMBEZZLEMENT".split(",")), getUCROffenses(relatedCharges)) == false) {
+                fileWriter.println("<j:OffenseCargoTheftIndicator>true</j:OffenseCargoTheftIndicator>");
+            }
+            fileWriter.println("</cjis:IncidentAugmentation>");
+            fileWriter.println("<j:IncidentAugmentation>");
+            //<!-- Element 4, Cleared Exceptionally -->
+            String incidentExceptionalClearanceCodeValue = offense.cf_indicentExceptionalClear != null && !offense.cf_indicentExceptionalClear.isEmpty() ? offense.cf_indicentExceptionalClear : incidentExceptionalClearanceCode[5];
+            if (["JUSTIFIABLE_HOMICIDE"].contains(getOffenseUCRCode(offense))) {
+                incidentExceptionalClearanceCodeValue = "N";
+            }
+            fileWriter.println("<j:IncidentExceptionalClearanceCode>${incidentExceptionalClearanceCodeValue}</j:IncidentExceptionalClearanceCode>");
 
-                //<!-- Element 5, Exceptional Clearance Date -->
-                if (incidentExceptionalClearanceCodeValue != "N") {
-                    //(offense.cf_indicentExceptionalClear != null && offense.cf_indicentExceptionalClear != "N" || incidentExceptionalClearanceCode[5] != "N"){
-                    fileWriter.println("<j:IncidentExceptionalClearanceDate>");
-                    fileWriter.println("<nc:Date>${incidentExceptionalClearanceDate}</nc:Date>");
-                    fileWriter.println("</j:IncidentExceptionalClearanceDate>");
-                }
-                fileWriter.println("</j:IncidentAugmentation>");
-                fileWriter.println("</nc:Incident>");
+            //<!-- Element 5, Exceptional Clearance Date -->
+            if (incidentExceptionalClearanceCodeValue != "N") {
+                //(offense.cf_indicentExceptionalClear != null && offense.cf_indicentExceptionalClear != "N" || incidentExceptionalClearanceCode[5] != "N"){
+                fileWriter.println("<j:IncidentExceptionalClearanceDate>");
+                fileWriter.println("<nc:Date>${incidentExceptionalClearanceDate}</nc:Date>");
+                fileWriter.println("</j:IncidentExceptionalClearanceDate>");
+            }
+            fileWriter.println("</j:IncidentAugmentation>");
+            fileWriter.println("</nc:Incident>");
 
 //These filters prevent charges which are mutually exclusive from being reported in a incident report
-                relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
-                relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
-                relatedCharges = getRelatedChargesLimitedBySimpleAssault(relatedCharges);
-                relatedCharges = getRelatedChargesLimitedByIntimidation(relatedCharges);
-                relatedCharges = getRelatedChargeLimitedByUniqueOffenseUCRCode(relatedCharges);
-                relatedCharges = getRelatedChargesLimitedByRobbery(relatedCharges);
-                relatedCharges = getRelatedChargesLimit10(relatedCharges);
+            relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
+            relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
+            relatedCharges = getRelatedChargesLimitedBySimpleAssault(relatedCharges);
+            relatedCharges = getRelatedChargesLimitedByIntimidation(relatedCharges);
+            relatedCharges = getRelatedChargeLimitedByUniqueOffenseUCRCode(relatedCharges);
+            relatedCharges = getRelatedChargesLimitedByRobbery(relatedCharges);
+            relatedCharges = getRelatedChargesLimit10(relatedCharges);
 
-                if (Collections.disjoint(getUCROffenses(relatedCharges), personAndPropertyUCROffenses) == false &&
-                        Collections.disjoint(getUCROffenses(relatedCharges), societyUCROffenses) == false) {
-                    relatedCharges = getRelatedChargesLimitedByExcludingListCharges(relatedCharges, societyUCROffenses);
+            if (Collections.disjoint(getUCROffenses(relatedCharges), personAndPropertyUCROffenses) == false &&
+                    Collections.disjoint(getUCROffenses(relatedCharges), societyUCROffenses) == false) {
+                relatedCharges = getRelatedChargesLimitedByExcludingListCharges(relatedCharges, societyUCROffenses);
+            }
+            for (def Charge relatedOffense in relatedCharges) {
+
+                relatedOffense.setUpdateReason("NIBRS");
+                relatedOffense.setCf_judicialDistrictCode(caseJudicialDistrictCode);
+
+
+                fileWriter.println("<j:Offense s:id='" + "Offense${relatedOffense.id}" + "'>");
+                //<!-- Element 6, Offense Code -->
+                String relatedOffenseUCRCode = getOffenseUCRCode(relatedOffense);
+                fileWriter.println("<nibrs:OffenseUCRCode>${offensesMap.get(relatedOffenseUCRCode)}</nibrs:OffenseUCRCode><!-- ${relatedOffenseUCRCode} -->");
+                //<!-- Element 12, Type Criminal Activity/Gang Information -->
+                criminalActivityCategoryCode = offenseUCRCodeRequiredWhenGangInformationCode.contains(relatedOffenseUCRCode) ? "N" : "";
+
+                criminalActivityCategoryCode = criminalActivityCategoryCode.isEmpty() && offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationSubSet.contains(relatedOffenseUCRCode) ? criminalActivityCategoryCodesSubset[0] : criminalActivityCategoryCode;
+
+                criminalActivityCategoryCode = offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationSubSetAnimalsCruelty.contains(relatedOffenseUCRCode) ? criminalActivityCategoryCodesSubsetAnimalsCruelty[0] : criminalActivityCategoryCode;
+
+                criminalActivityCategoryCode = criminalActivityCategoryCode.isEmpty() && offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent.contains(relatedOffenseUCRCode) ? "A" : criminalActivityCategoryCode;
+
+                criminalActivityCategoryCode = relatedOffenseUCRCode == weaponsOfMassDestruction ? "T" : criminalActivityCategoryCode;
+
+                if (!criminalActivityCategoryCode.isEmpty() && Collections.disjoint(offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent, getUCROffenses(relatedCharges)) == false) {
+                    fileWriter.println("<nibrs:CriminalActivityCategoryCode>${relatedOffense.cf_criminalActivityCategory != null ? relatedOffense.cf_criminalActivityCategory : criminalActivityCategoryCode}</nibrs:CriminalActivityCategoryCode>");
                 }
-                for (def Charge relatedOffense in relatedCharges) {
-
-                    relatedOffense.setUpdateReason("NIBRS");
-                    relatedOffense.setCf_judicialDistrictCode(caseJudicialDistrictCode);
-
-
-                    fileWriter.println("<j:Offense s:id='" + "Offense${relatedOffense.id}" + "'>");
-                    //<!-- Element 6, Offense Code -->
-                    String relatedOffenseUCRCode = getOffenseUCRCode(relatedOffense);
-                    fileWriter.println("<nibrs:OffenseUCRCode>${offensesMap.get(relatedOffenseUCRCode)}</nibrs:OffenseUCRCode><!-- ${relatedOffenseUCRCode} -->");
-                    //<!-- Element 12, Type Criminal Activity/Gang Information -->
-                    criminalActivityCategoryCode = offenseUCRCodeRequiredWhenGangInformationCode.contains(relatedOffenseUCRCode) ? "N" : "";
-
-                    criminalActivityCategoryCode = criminalActivityCategoryCode.isEmpty() && offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationSubSet.contains(relatedOffenseUCRCode) ? criminalActivityCategoryCodesSubset[0] : criminalActivityCategoryCode;
-
-                    criminalActivityCategoryCode = offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationSubSetAnimalsCruelty.contains(relatedOffenseUCRCode) ? criminalActivityCategoryCodesSubsetAnimalsCruelty[0] : criminalActivityCategoryCode;
-
-                    criminalActivityCategoryCode = criminalActivityCategoryCode.isEmpty() && offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent.contains(relatedOffenseUCRCode) ? "A" : criminalActivityCategoryCode;
-
-                    criminalActivityCategoryCode = relatedOffenseUCRCode == weaponsOfMassDestruction ? "T" : criminalActivityCategoryCode;
-
-                    if (!criminalActivityCategoryCode.isEmpty() && Collections.disjoint(offenseUCRCodeRequiredWhenCriminalActivityOrGangInformationPresent, getUCROffenses(relatedCharges)) == false) {
-                        fileWriter.println("<nibrs:CriminalActivityCategoryCode>${relatedOffense.cf_criminalActivityCategory != null ? relatedOffense.cf_criminalActivityCategory : criminalActivityCategoryCode}</nibrs:CriminalActivityCategoryCode>");
-                    }
-                    //<!-- Element 8A, Bias Motivation -->
-                    fileWriter.println("<j:OffenseFactorBiasMotivationCode>${relatedOffense.cf_offenseFactorBiasMotiv != null ? relatedOffense.cf_offenseFactorBiasMotiv : offenseFactorBiasMotivationCode}</j:OffenseFactorBiasMotivationCode>");
-                    //<!-- Element 8, Offender(s) Suspected Of Using -->
-                    fileWriter.println("<j:OffenseFactor>");
-                    fileWriter.println("<j:OffenseFactorCode>${relatedOffense.cf_offenseFactor != null ? relatedOffense.cf_offenseFactor : offenseFactorCode}</j:OffenseFactorCode>");
-                    fileWriter.println("</j:OffenseFactor>");
-                    if (offenseUCRCodeAreRequireForce.contains(relatedOffenseUCRCode)) {
-                        //<!-- Element 11, Method Of Entry -->
-                        fileWriter.println("<j:OffenseEntryPoint>");
-                        fileWriter.println("<j:PassagePointMethodCode>${relatedOffense.cf_passagePointMethod != null ? relatedOffense.cf_passagePointMethod : passagePointMethodCode[1]}</j:PassagePointMethodCode>");
-                        fileWriter.println("</j:OffenseEntryPoint>");
-                    }
-                    //<!-- Element 13, Type Weapon/Force Involved -->
-                    if (offenseUCRCodeRequiredWhenForceCategoryPresent.contains(relatedOffenseUCRCode)) {
-                        //TODO forceCategoryCode review relatedOffense.cf_forceCategory
-                        String forceCategoryCode = getForceCategoryCode(relatedOffense);
-                        fileWriter.println("<j:OffenseForce>");
-                        fileWriter.println("<j:ForceCategoryCode>${forceCategoryCode}</j:ForceCategoryCode>");
-                        fileWriter.println("</j:OffenseForce>");
-                    }
-                    //<!-- Element 7, Attempted/Completed -->
-                    offenseAttemptedIndicator = isAttempted(relatedOffense) ? true : offenseAttemptedIndicator;
-                    fileWriter.println("<j:OffenseAttemptedIndicator>${isAttempted(relatedOffense)}</j:OffenseAttemptedIndicator>");
-                    fileWriter.println("</j:Offense>");
+                //<!-- Element 8A, Bias Motivation -->
+                fileWriter.println("<j:OffenseFactorBiasMotivationCode>${relatedOffense.cf_offenseFactorBiasMotiv != null ? relatedOffense.cf_offenseFactorBiasMotiv : offenseFactorBiasMotivationCode}</j:OffenseFactorBiasMotivationCode>");
+                //<!-- Element 8, Offender(s) Suspected Of Using -->
+                fileWriter.println("<j:OffenseFactor>");
+                fileWriter.println("<j:OffenseFactorCode>${relatedOffense.cf_offenseFactor != null ? relatedOffense.cf_offenseFactor : offenseFactorCode}</j:OffenseFactorCode>");
+                fileWriter.println("</j:OffenseFactor>");
+                if (offenseUCRCodeAreRequireForce.contains(relatedOffenseUCRCode)) {
+                    //<!-- Element 11, Method Of Entry -->
+                    fileWriter.println("<j:OffenseEntryPoint>");
+                    fileWriter.println("<j:PassagePointMethodCode>${relatedOffense.cf_passagePointMethod != null ? relatedOffense.cf_passagePointMethod : passagePointMethodCode[1]}</j:PassagePointMethodCode>");
+                    fileWriter.println("</j:OffenseEntryPoint>");
                 }
+                //<!-- Element 13, Type Weapon/Force Involved -->
+                if (offenseUCRCodeRequiredWhenForceCategoryPresent.contains(relatedOffenseUCRCode)) {
+                    //TODO forceCategoryCode review relatedOffense.cf_forceCategory
+                    String forceCategoryCode = getForceCategoryCode(relatedOffense);
+                    fileWriter.println("<j:OffenseForce>");
+                    fileWriter.println("<j:ForceCategoryCode>${forceCategoryCode}</j:ForceCategoryCode>");
+                    fileWriter.println("</j:OffenseForce>");
+                }
+                //<!-- Element 7, Attempted/Completed -->
+                offenseAttemptedIndicator = isAttempted(relatedOffense) ? true : offenseAttemptedIndicator;
+                fileWriter.println("<j:OffenseAttemptedIndicator>${isAttempted(relatedOffense)}</j:OffenseAttemptedIndicator>");
+                fileWriter.println("</j:Offense>");
+            }
 
-                //loop through offenses for offense location
-                //for (offense in offenses){
-                //<!-- Element 9, Location Type -->
-                fileWriter.println("<nc:Location s:id='" + "Location${offense.id}" + "'>");
-                fileWriter.println("<nibrs:LocationCategoryCode>${offense.cf_locationCategory != null ? offense.cf_locationCategory : locationCategoryCode}</nibrs:LocationCategoryCode>");
+            //loop through offenses for offense location
+            //for (offense in offenses){
+            //<!-- Element 9, Location Type -->
+            fileWriter.println("<nc:Location s:id='" + "Location${offense.id}" + "'>");
+            fileWriter.println("<nibrs:LocationCategoryCode>${offense.cf_locationCategory != null ? offense.cf_locationCategory : locationCategoryCode}</nibrs:LocationCategoryCode>");
 //              fileWriter.println("<nc:LocationLocale>");
 //                    fileWriter.println("<cjis:JudicialDistrictCode>${caseJudicialDistrictCode != null ? caseJudicialDistrictCode : judicialDistrictCode[0]}</cjis:JudicialDistrictCode>");
 //              fileWriter.println("</nc:LocationLocale>");
-                fileWriter.println("</nc:Location>");
-                //}
+            fileWriter.println("</nc:Location>");
+            //}
 
-                for (def Charge relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({ Charge it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it)) }))) {
-                    String offenseUCRCodeRelatedOffense = getOffenseUCRCode(relatedOffense);
+            for (def Charge relatedOffense in getChargeListUniqueByItemStatus(relatedCharges.findAll({ Charge it -> offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(it)) }))) {
+                String offenseUCRCodeRelatedOffense = getOffenseUCRCode(relatedOffense);
 
-                    //<!-- Begin Property -->
-                    if (Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges)) && (offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(relatedOffense)) || offenseUCRCodeRequiredWhenPropertyNoneSeized.contains(getOffenseUCRCode(relatedOffense)))) {
-                        fileWriter.println("<nc:Item>");
-                        //<!-- Element 14, Type Property Loss/etc  -->
+                //<!-- Begin Property -->
+                if (Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges)) && (offenseUCRCodeRequiresProperty.contains(getOffenseUCRCode(relatedOffense)) || offenseUCRCodeRequiredWhenPropertyNoneSeized.contains(getOffenseUCRCode(relatedOffense)))) {
+                    fileWriter.println("<nc:Item>");
+                    //<!-- Element 14, Type Property Loss/etc  -->
 
-                        //fileWriter.println("<nc:ItemStatus>");
-                        fileWriter.println("<nc:ItemStatus s:id='" + "ItemStatus${relatedOffense.id}" + "'>");
-                        fileWriter.println("<cjis:ItemStatusCode>${getItemStatus(relatedOffense)}</cjis:ItemStatusCode>");
-                        fileWriter.println("</nc:ItemStatus>");
+                    //fileWriter.println("<nc:ItemStatus>");
+                    fileWriter.println("<nc:ItemStatus s:id='" + "ItemStatus${relatedOffense.id}" + "'>");
+                    fileWriter.println("<cjis:ItemStatusCode>${getItemStatus(relatedOffense)}</cjis:ItemStatusCode>");
+                    fileWriter.println("</nc:ItemStatus>");
 
-                        itemCategoryNIBRSPropertyCategoryCode = getItemCategoryCode(relatedOffense);
-                        if (getItemStatus(relatedOffense) != "NONE" && !isAttempted(relatedOffense)) {
-                            //<!-- Element 16, Value of Property in US Dollars -->
-                            if (!Arrays.asList("09,22,48,65,66".split(",")).contains(itemCategoryNIBRSPropertyCategoryCode)) {
-                                fileWriter.println("<nc:ItemValue>");
-                                fileWriter.println("<nc:ItemValueAmount>");
-                                fileWriter.println("<nc:Amount>${relatedOffense.cf_itemValue != null ? relatedOffense.cf_itemValue : itemValueAmount}</nc:Amount>");
-                                fileWriter.println("</nc:ItemValueAmount>");
-                                fileWriter.println("</nc:ItemValue>");
-                            }
-                            //<!-- Element 15, Property Description -->
-                            fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>${itemCategoryNIBRSPropertyCategoryCode}</j:ItemCategoryNIBRSPropertyCategoryCode>");
-                            //<!-- Element 18, Number of Stolen Motor Vehicles, if Status is Stolen -->
-                            fileWriter.println("<nc:ItemQuantity>${getItemQuantity(relatedOffense)}</nc:ItemQuantity>");
-                        }
-                        fileWriter.println("</nc:Item>");
-                    }
-                }
-
-                for (def Charge relatedOffense in getChargeListUniqueBySubstanceData(relatedCharges.findAll({ Charge it -> substanceRelatedUCR.contains(getOffenseUCRCode(it)) }))) {
-                    if (!Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges))) {
-                        fileWriter.println("<nc:Substance>");
-                        //<!-- Element 14, Type Property Loss/etc  Substituted for nc:ItemStatus -->
-                        fileWriter.println("<nc:ItemStatus>");
-                        fileWriter.println("<cjis:ItemStatusCode>SEIZED</cjis:ItemStatusCode>");
-                        fileWriter.println("</nc:ItemStatus>");
+                    itemCategoryNIBRSPropertyCategoryCode = getItemCategoryCode(relatedOffense);
+                    if (getItemStatus(relatedOffense) != "NONE" && !isAttempted(relatedOffense)) {
                         //<!-- Element 16, Value of Property in US Dollars -->
-                        if (getOffenseUCRCode(relatedOffense) == "DRUG-NARCOTIC_VIOLATIONS" && relatedCharges.size() > 1 || getOffenseUCRCode(relatedOffense) != "DRUG-NARCOTIC_VIOLATIONS") {
+                        if (!Arrays.asList("09,22,48,65,66".split(",")).contains(itemCategoryNIBRSPropertyCategoryCode)) {
                             fileWriter.println("<nc:ItemValue>");
                             fileWriter.println("<nc:ItemValueAmount>");
-                            fileWriter.println("<nc:Amount>12000</nc:Amount>");
+                            fileWriter.println("<nc:Amount>${relatedOffense.cf_itemValue != null ? relatedOffense.cf_itemValue : itemValueAmount}</nc:Amount>");
                             fileWriter.println("</nc:ItemValueAmount>");
-                            //<!-- Element 17, Date Recovered -->
-//                        fileWriter.println("<!--<nc:ItemValueDate>");
-//                        fileWriter.println("<nc:Date>2024-02-09</nc:Date>");
-//                        fileWriter.println("</nc:ItemValueDate>-->");
                             fileWriter.println("</nc:ItemValue>");
                         }
                         //<!-- Element 15, Property Description -->
-                        fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>10</j:ItemCategoryNIBRSPropertyCategoryCode>");
-                        //<!-- Element 20, Suspected Involved Drug Type -->
-                        fileWriter.println("<j:DrugCategoryCode>E</j:DrugCategoryCode>");
-                        fileWriter.println("<nc:SubstanceQuantityMeasure>");
-                        //<!-- Element 21/22, Estimated Quantity/Fraction -->
-                        fileWriter.println("<nc:MeasureDecimalValue>1.5</nc:MeasureDecimalValue>");
-                        fileWriter.println("<j:SubstanceUnitCode>OZ</j:SubstanceUnitCode>");
-                        fileWriter.println("</nc:SubstanceQuantityMeasure>");
-                        fileWriter.println("</nc:Substance>");
+                        fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>${itemCategoryNIBRSPropertyCategoryCode}</j:ItemCategoryNIBRSPropertyCategoryCode>");
+                        //<!-- Element 18, Number of Stolen Motor Vehicles, if Status is Stolen -->
+                        fileWriter.println("<nc:ItemQuantity>${getItemQuantity(relatedOffense)}</nc:ItemQuantity>");
                     }
+                    fileWriter.println("</nc:Item>");
                 }
+            }
+
+            for (def Charge relatedOffense in getChargeListUniqueBySubstanceData(relatedCharges.findAll({ Charge it -> substanceRelatedUCR.contains(getOffenseUCRCode(it)) }))) {
+                if (!Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges))) {
+                    fileWriter.println("<nc:Substance>");
+                    //<!-- Element 14, Type Property Loss/etc  Substituted for nc:ItemStatus -->
+                    fileWriter.println("<nc:ItemStatus>");
+                    fileWriter.println("<cjis:ItemStatusCode>SEIZED</cjis:ItemStatusCode>");
+                    fileWriter.println("</nc:ItemStatus>");
+                    //<!-- Element 16, Value of Property in US Dollars -->
+                    if (getOffenseUCRCode(relatedOffense) == "DRUG-NARCOTIC_VIOLATIONS" && relatedCharges.size() > 1 || getOffenseUCRCode(relatedOffense) != "DRUG-NARCOTIC_VIOLATIONS") {
+                        fileWriter.println("<nc:ItemValue>");
+                        fileWriter.println("<nc:ItemValueAmount>");
+                        fileWriter.println("<nc:Amount>12000</nc:Amount>");
+                        fileWriter.println("</nc:ItemValueAmount>");
+                        //<!-- Element 17, Date Recovered -->
+//                        fileWriter.println("<!--<nc:ItemValueDate>");
+//                        fileWriter.println("<nc:Date>2024-02-09</nc:Date>");
+//                        fileWriter.println("</nc:ItemValueDate>-->");
+                        fileWriter.println("</nc:ItemValue>");
+                    }
+                    //<!-- Element 15, Property Description -->
+                    fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>10</j:ItemCategoryNIBRSPropertyCategoryCode>");
+                    //<!-- Element 20, Suspected Involved Drug Type -->
+                    fileWriter.println("<j:DrugCategoryCode>E</j:DrugCategoryCode>");
+                    fileWriter.println("<nc:SubstanceQuantityMeasure>");
+                    //<!-- Element 21/22, Estimated Quantity/Fraction -->
+                    fileWriter.println("<nc:MeasureDecimalValue>1.5</nc:MeasureDecimalValue>");
+                    fileWriter.println("<j:SubstanceUnitCode>OZ</j:SubstanceUnitCode>");
+                    fileWriter.println("</nc:SubstanceQuantityMeasure>");
+                    fileWriter.println("</nc:Substance>");
+                }
+            }
 
 
-                //for (victim in offenseVictims){
+            for (victim in offenseVictims) {
                 fileWriter.println("<nc:Person s:id='" + "PersonVictim${victim.id}" + "'>");
                 if (
                         offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS.contains(getOffenseUCRCode(relatedCharges.first())) == false
@@ -552,36 +553,38 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                     fileWriter.println("<j:PersonSexCode>${getGenderCode(victim, offense)}</j:PersonSexCode>");
                 }
                 fileWriter.println("</nc:Person>");
-                //}
+            }
 
 
-                for (def Party subject in offenseSubjects) {
-                    fileWriter.println("<nc:Person s:id='" + "PersonSubject${subject.id}" + "'>");
+            for (def Party subject in offenseSubjects) {
+                fileWriter.println("<nc:Person s:id='" + "PersonSubject${subject.id}" + "'>");
 
 
-                    //<!-- Element 37, Age of Subject (only one would be included per subject) -->
-                    fileWriter.println("<nc:PersonAgeMeasure>");
+                //<!-- Element 37, Age of Subject (only one would be included per subject) -->
+                fileWriter.println("<nc:PersonAgeMeasure>");
 
-                    if (getAge(subject) != null) {
-                        fileWriter.println("<nc:MeasureIntegerValue>${getAge(subject)}</nc:MeasureIntegerValue>");
-                    } else {
-                        fileWriter.println("<nc:MeasureIntegerRange>");
-                        fileWriter.println("<nc:RangeMaximumIntegerValue>${maxAgeRange}</nc:RangeMaximumIntegerValue>");
-                        fileWriter.println("<nc:RangeMinimumIntegerValue>${minAgeRange}</nc:RangeMinimumIntegerValue>");
-                        fileWriter.println("</nc:MeasureIntegerRange>");
-                    }
-                    fileWriter.println("</nc:PersonAgeMeasure>");
-                    //<!-- Element 39A, Ethnicity of Subject -->
-                    fileWriter.println("<j:PersonEthnicityCode>${getEthnicity(subject, offense)}</j:PersonEthnicityCode>");
-                    //<!-- Element 39, Race of Subject -->
-                    fileWriter.println("<j:PersonRaceNDExCode>${getRace(subject, offense)}</j:PersonRaceNDExCode>");
-                    //<!-- Element 38, Sex of Subject -->
-                    fileWriter.println("<j:PersonSexCode>${getGenderCode(subject, offense)}</j:PersonSexCode>");
-                    fileWriter.println("</nc:Person>");
+                if (getAge(subject) != null) {
+                    fileWriter.println("<nc:MeasureIntegerValue>${getAge(subject)}</nc:MeasureIntegerValue>");
+                } else {
+                    fileWriter.println("<nc:MeasureIntegerRange>");
+                    fileWriter.println("<nc:RangeMaximumIntegerValue>${maxAgeRange}</nc:RangeMaximumIntegerValue>");
+                    fileWriter.println("<nc:RangeMinimumIntegerValue>${minAgeRange}</nc:RangeMinimumIntegerValue>");
+                    fileWriter.println("</nc:MeasureIntegerRange>");
                 }
+                fileWriter.println("</nc:PersonAgeMeasure>");
+                //<!-- Element 39A, Ethnicity of Subject -->
+                fileWriter.println("<j:PersonEthnicityCode>${getEthnicity(subject, offense)}</j:PersonEthnicityCode>");
+                //<!-- Element 39, Race of Subject -->
+                fileWriter.println("<j:PersonRaceNDExCode>${getRace(subject, offense)}</j:PersonRaceNDExCode>");
+                //<!-- Element 38, Sex of Subject -->
+                fileWriter.println("<j:PersonSexCode>${getGenderCode(subject, offense)}</j:PersonSexCode>");
+                fileWriter.println("</nc:Person>");
+            }
 
 
-                //for (victim in offenseVictims){
+            for (victim in offenseVictims) {
+                def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }))
+                logger.debug("victimURCOffenses:${victimURCOffenses}");
                 fileWriter.println("<j:Victim s:id='" + "Victim${victim.id}" + "'>");
                 fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}" + "'/>");
                 //<!-- Element 23, Victim Sequence Number -->
@@ -611,16 +614,23 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
                 fileWriter.println("<j:VictimCategoryCode>${victimCategoryCode}</j:VictimCategoryCode>");
                 if (["09A", "09B", "09C", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
-                    String victimAggravatedAssaultHomicideFactorCode = "";
-                    if (["09A", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+                    def String victimAggravatedAssaultHomicideFactorCode = "";
+                    if (!Collections.disjoint(victimURCOffenses, ["AGGRAVATED_ASSAULT", "MANSLAUGHTER_NONNEGLIGENT-MURDER"])) {
                         victimAggravatedAssaultHomicideFactorCode = "10";
-                    } else if (["09B"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+                    } else if (!Collections.disjoint(victimURCOffenses, ["MANSLAUGHTER_NEGLIGENT"])) {
                         victimAggravatedAssaultHomicideFactorCode = "34";
-                    } else if (["09C"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+                    } else if (!Collections.disjoint(victimURCOffenses, ["JUSTIFIABLE_HOMICIDE"])) {
                         victimAggravatedAssaultHomicideFactorCode = "20";
-                    } else {
-                        victimAggravatedAssaultHomicideFactorCode = "";
                     }
+//                    if (["09A", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+//                        victimAggravatedAssaultHomicideFactorCode = "10";
+//                    } else if (["09B"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+//                        victimAggravatedAssaultHomicideFactorCode = "34";
+//                    } else if (["09C"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+//                        victimAggravatedAssaultHomicideFactorCode = "20";
+//                    } else {
+//                        victimAggravatedAssaultHomicideFactorCode = "";
+//                    }
                     if (!victimAggravatedAssaultHomicideFactorCode.isEmpty()) {
                         //<!-- Element 31, Aggravated Assault/Homicide Circumstances -->
                         fileWriter.println("<j:VictimAggravatedAssaultHomicideFactorCode>${victimAggravatedAssaultHomicideFactorCode}</j:VictimAggravatedAssaultHomicideFactorCode>");
@@ -632,84 +642,85 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                     fileWriter.println("<j:VictimJustifiableHomicideFactorCode>${victimJustifiableHomicideFactorCode}</j:VictimJustifiableHomicideFactorCode>");
                 }
                 fileWriter.println("</j:Victim>");
-                //}
+            }
 
-                for (subject in offenseSubjects) {
-                    fileWriter.println("<j:Subject s:id='" + "Subject${subject.id}" + "'>");
-                    fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonSubject${subject.id}" + "'/>");
-                    //<!-- Element 36, Offender Sequence Number -->
-                    fileWriter.println("<j:SubjectSequenceNumberText>${offenseSubjectsArrayList.indexOf(subject) + 1}</j:SubjectSequenceNumberText>");
-                    fileWriter.println("</j:Subject>");
-                }
+            for (subject in offenseSubjects) {
+                fileWriter.println("<j:Subject s:id='" + "Subject${subject.id}" + "'>");
+                fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonSubject${subject.id}" + "'/>");
+                //<!-- Element 36, Offender Sequence Number -->
+                fileWriter.println("<j:SubjectSequenceNumberText>${offenseSubjectsArrayList.indexOf(subject) + 1}</j:SubjectSequenceNumberText>");
+                fileWriter.println("</j:Subject>");
+            }
 
-                //<!-- Associations  -->
+            //<!-- Associations  -->
 
-                //<!-- Offense Location Association -->
-                for (relatedOffense in relatedCharges) {
-                    fileWriter.println("<j:OffenseLocationAssociation>");
-                    fileWriter.println("<j:Offense s:ref='" + "Offense${relatedOffense.id}" + "'/>");
-                    fileWriter.println("<nc:Location s:ref='" + "Location${offense.id}" + "'/>");
-                    fileWriter.println("</j:OffenseLocationAssociation>");
-                }
+            //<!-- Offense Location Association -->
+            for (relatedOffense in relatedCharges) {
+                fileWriter.println("<j:OffenseLocationAssociation>");
+                fileWriter.println("<j:Offense s:ref='" + "Offense${relatedOffense.id}" + "'/>");
+                fileWriter.println("<nc:Location s:ref='" + "Location${offense.id}" + "'/>");
+                fileWriter.println("</j:OffenseLocationAssociation>");
+            }
 
-                //<!-- Element 24, Victim Connected to UCR Offense Code -->
-                for (relatedOffense in relatedCharges) {
-                    //for (victim in offense.collect(victimFilterXrefChargeVictim)){
+            //<!-- Element 24, Victim Connected to UCR Offense Code -->
+            for (def Charge relatedOffense in relatedCharges) {
+                for (def Party victim in relatedOffense.collect(victimFilterXrefChargeVictim)) {
                     fileWriter.println("<j:OffenseVictimAssociation>");
                     fileWriter.println("<j:Offense s:ref='" + "Offense${relatedOffense.id}" + "'/>");
                     fileWriter.println("<j:Victim s:ref='" + "Victim${victim.id}" + "'/>");
                     fileWriter.println("</j:OffenseVictimAssociation>");
-                    //}
                 }
+            }
 
-                //<!--Element 34, Offender Number(s) to be related -->
-
-                for (subject in offenseSubjects) {
-                    if (victimCategoryCode == "I") {
+            //<!--Element 34, Offender Number(s) to be related -->
+            if(Collections.disjoint(personAndPropertyUCROffenses, getUCROffenses(relatedCharges)) == false) {
+                for (def Party subject in offenseSubjects) {
+                    for (victim in offenseVictims) {
+                        def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }));
                         fileWriter.println("<j:SubjectVictimAssociation s:id='" + "SubjectVictimAssocSP${subject.id}${victim.id}" + "'>");
                         fileWriter.println("<j:Subject s:ref='" + "Subject${subject.id}" + "'/>");
                         fileWriter.println("<j:Victim s:ref='" + "Victim${victim.id}" + "'/>");
                         //<!-- Element 35, Relationship(s) of Victim To Offender -->
                         String victimToSubjectRelationshipCode = "Acquaintance";
-                        if (getOffenseUCRCode(offense) == "INCEST") {
+                        if (Collections.disjoint(victimURCOffenses, ["INCEST"]) == false) {
                             victimToSubjectRelationshipCode = "Family Member";
                         }
                         fileWriter.println("<nibrs:VictimToSubjectRelationshipCode>${victimToSubjectRelationshipCode}</nibrs:VictimToSubjectRelationshipCode>");
                         fileWriter.println("</j:SubjectVictimAssociation>");
                     }
-                    //}
                 }
-
-
-                fileWriter.println("</nibrs:Report>");
-                fileWriter.println("</nibrs:Submission>");
-                fileWriter.flush();
-                fileWriter.close();
-
-                attachmentFiles = new ArrayList<>(Arrays.asList(reportFile)).toArray(File[]);
-                attachments = new Attachments(attachmentFiles);
-
-                reportDoc = createDocument(reportFile, cse, offenses, batch, caseJudicialDistrictCode);
-                addDocumentToDocuments(cse, reportDoc);
-
-                if (_sendEmail == true) {
-                    mailManager.sendMailToAll(toEmails, ccEmails, bccEmails, emailSubject, emailBody, attachments);
-                }
-                _fileOut = reportFile;
-                Files.deleteIfExists(reportPath);
-            } catch (Exception exception) {
-                logger.debug("exception:${exception.getMessage()}")
-                interfaceTracking.setResult("FAIL");
-                interfaceTrackingDetails.add(createTrackingDetail(interfaceTracking, nowTimestamp, "", "", "", exception.getMessage()));
-            } finally {
-                logger.debug("finally:")
-                !interfaceTracking.result?.isEmpty() ?: interfaceTracking.setResult("SUCCESS");
-                DomainObject.saveOrUpdate(cse);
-                DomainObject.saveOrUpdateAll(processedRelatedOffenses);
-                DomainObject.saveOrUpdate(interfaceTracking);
-                DomainObject.saveOrUpdateAll(interfaceTrackingDetails);
             }
+
+
+            fileWriter.println("</nibrs:Report>");
+            fileWriter.println("</nibrs:Submission>");
+            fileWriter.flush();
+            fileWriter.close();
+
+            attachmentFiles = new ArrayList<>(Arrays.asList(reportFile)).toArray(File[]);
+            attachments = new Attachments(attachmentFiles);
+
+            reportDoc = createDocument(reportFile, cse, offenses, batch, caseJudicialDistrictCode);
+            addDocumentToDocuments(cse, reportDoc);
+
+            if (_sendEmail == true) {
+                mailManager.sendMailToAll(toEmails, ccEmails, bccEmails, emailSubject, emailBody, attachments);
+            }
+            _fileOut = reportFile;
+            Files.deleteIfExists(reportPath);
+        } catch (Exception exception) {
+            logger.debug("exception:${exception.getMessage()}")
+            interfaceTracking.setResult("FAIL");
+            interfaceTrackingDetails.add(createTrackingDetail(interfaceTracking, nowTimestamp, "", "", "", exception.getMessage()));
+        } finally {
+            logger.debug("finally:")
+            !interfaceTracking.result?.isEmpty() ?: interfaceTracking.setResult("SUCCESS");
+            DomainObject.saveOrUpdate(cse);
+            DomainObject.saveOrUpdateAll(processedRelatedOffenses);
+            DomainObject.saveOrUpdate(interfaceTracking);
+            DomainObject.saveOrUpdateAll(interfaceTrackingDetails);
         }
+//        }
     }
 
 }
@@ -754,18 +765,21 @@ protected Party createOffenseVictim(Case cse) {
     return offenseVictim;
 }
 
-protected ArrayList<Party> getOffenseVictims(Charge offense, String victimFilterXrefChargeVictim) {
-    def Case cse = offense.associatedParty.case;
+protected ArrayList<Party> getOffenseVictims(ArrayList<Charge> offenses, String victimFilterXrefChargeVictim) {
     def ArrayList<Party> ucrOffenseVictims = new ArrayList();
-    def RichList<Party> ucrOffenseVictimsList = offense.collect(victimFilterXrefChargeVictim);
-    if (!ucrOffenseVictimsList.isEmpty()) {
-        ucrOffenseVictims.addAll(ucrOffenseVictimsList);
-    } else {
-        def Party offenseVictim = createOffenseVictim(cse);
-        ucrOffenseVictims.add(offenseVictim);
-        offense.addCrossReference(offenseVictim, "VICTIMOF")
+    for (Charge offense in offenses) {
+        def Case cse = offense.associatedParty.case;
+
+        def RichList<Party> ucrOffenseVictimsList = offense.collect(victimFilterXrefChargeVictim);
+        if (!ucrOffenseVictimsList.isEmpty()) {
+            ucrOffenseVictims.addAll(ucrOffenseVictimsList);
+        } else {
+            def Party offenseVictim = createOffenseVictim(cse);
+            ucrOffenseVictims.add(offenseVictim);
+            offense.addCrossReference(offenseVictim, "VICTIMOF")
+        }
     }
-    return ucrOffenseVictims?.sort({ a, b -> a.id <=> b.id });
+    return ucrOffenseVictims?.unique({ Party it -> it })?.sort({ a, b -> a.id <=> b.id });
 }
 
 protected Integer getAge(Party party) {
@@ -1012,9 +1026,9 @@ protected void addDocumentToDocuments(Case cse, Document document) {
     cse.saveOrUpdate();
 }
 
-protected List<String> getUCROffenses(List offenses) {
+protected List<String> getUCROffenses(List<Charge> offenses) {
     List<String> ucrOffenses = new ArrayList();
-    offenses.each({ it -> ucrOffenses.add(it.collect("chargeAttributes")?.find({ attr -> attr != null })) });
+    offenses.each({Charge it -> ucrOffenses.add(it.collect("chargeAttributes")?.find({ attr -> attr != null })) });
     return ucrOffenses;
 }
 
