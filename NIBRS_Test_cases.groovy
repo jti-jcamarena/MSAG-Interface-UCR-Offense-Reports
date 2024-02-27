@@ -2,7 +2,10 @@ import com.sustain.DomainObject;
 import com.sustain.cases.model.Case;
 import com.sustain.cases.model.Party;
 import com.sustain.expression.Where;
+import com.sustain.cases.model.Charge
+import com.sustain.util.RichList;
 
+/*
 def Where where = new Where()
         //.addContainsAny("parties.partyType", ["VICTIM","DEFENDANT"])
         .addIsNotNull("parties.charges")
@@ -21,7 +24,34 @@ for (Long id in testCasesIds){
 
     }
 }
+*/
+/*
+Party firstParty = Party.get(32540L);
+Party secondParty = Party.get(32805L);
+List<Charge> chargesToSave = new ArrayList();
 
-//for (String partyType in distinctChargedParties){
-//    logger.debug(partyType)
-//}
+
+for (Charge charge in firstParty.collect("charges")){
+    //Set<String> attributes = charge.getChargeAttributes();
+    Charge newCharge = new Charge();
+    newCharge.setAssociatedParty(secondParty);
+    newCharge.setChargeNumber(charge.chargeNumber);
+    newCharge.setStatute(charge.statute);
+    newCharge.setStatus(charge.status);
+    //newCharge.setChargeAttributes(attributes);
+    newCharge.setChargeDate(charge.chargeDate);
+    secondParty.add(newCharge);
+    chargesToSave.add(newCharge);
+}
+
+for (Charge charge in secondParty.collect("charges")){
+    charge.setChargeDate(new Date());
+    chargesToSave.add(charge);
+}
+
+DomainObject.saveOrUpdateAll(chargesToSave);
+DomainObject.saveOrUpdate(secondParty);
+*/
+
+RichList<Document> allDocs = (RichList)DomainObject.find(Document.class, "case.id", 20490L, "case.caseNumber", "23-44")
+DomainObject.deleteAll(allDocs, true);

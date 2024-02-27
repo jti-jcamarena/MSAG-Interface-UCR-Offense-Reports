@@ -5,7 +5,8 @@ import com.sustain.document.model.Document;
 import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalDateTime
+import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
 import java.sql.Timestamp;
@@ -135,20 +136,34 @@ def String internalTesting = SystemProperty.getValue("nibrs.email.testing") ?: "
 def String ucrstatEmailAddress = SystemProperty.getValue("nibrs.email.inbox") ?: "";
 def String ucrstatEmailAddressCC = SystemProperty.getValue("nibrs.email.inbox.cc") ?: "";
 
+def int report_year = _report_year == null ? 0 : Integer.parseInt(_report_year);
+def int report_month = _report_month == null ? 0 : Month.valueOf(_report_month).getValue();
+logger.debug("report year: ${report_year} report month: ${report_month}");
+
+
 //pst:America/Los_Angeles, cst:America/Chicago
 def LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Chicago")).withNano(0);
-def LocalDate localDate = LocalDate.now();
-def LocalDate localDateLastDayOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
+String incidentDateTimeFormatted = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+if (report_month != 0) {
+    localDateTime = localDateTime.withMonth(report_month);
+}
+if (report_year != 0) {
+    localDateTime = localDateTime.withYear(report_year);
+}
+
+def LocalDate localDate = localDateTime.toLocalDate();
+def LocalDate localDateLastDayOfMonth = localDate.with(TemporalAdjusters.lastDayOfMonth());
 def Timestamp nowTimestamp = Timestamp.valueOf(localDateTime);
 
 def LocalDateTime localDateTimeStart = localDateTime.with(TemporalAdjusters.firstDayOfMonth()).withHour(0).withMinute(0).withSecond(0).withNano(0);
+
 def LocalDateTime localDateTimeEnd = localDateTime.with(TemporalAdjusters.lastDayOfMonth()).withHour(23).withMinute(59).withSecond(58).withNano(999999999);
 
 def String batch = "${localDateTime.month}${localDateTime.year}";
 
 _reportingPeriod = "${localDateTimeStart} : ${localDateTimeEnd}".toString();
 _lastDayOfMonth = "lastDayOfTheMonth:${localDate == localDateLastDayOfMonth} - ${localDateLastDayOfMonth}".toString();
-
+logger.debug("reporting period: ${_reportingPeriod}");
 def String interfaceName = "NIBRS_GroupAIncident";
 
 if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
@@ -178,7 +193,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     String owningAgencyORINumber = SystemProperty.getValue("nibrs.ori.agency.owning")?.matches(oriPattern) ? SystemProperty.getValue("nibrs.ori.agency.owning") : "MS090017V";
     //default test value
     String reportActionCategoryCode = "I";
-    String incidentDateTimeFormatted = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+
 
     boolean incidentReportDateIndicator = false;
     ArrayList<String> incidentExceptionalClearanceCode = new ArrayList<>(Arrays.asList("A", "B", "C", "D", "E", "N"));
@@ -241,6 +256,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     whereCharge.addIsNotNull("chargeAttributes");
     whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupA);
 
+    whereCharge.addEquals("id",764L)
+
     if (_cse != null) {
         whereCharge.addEquals("associatedParty.case", _cse);
     }
@@ -300,10 +317,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         HashSet<Party> offenseSubjects = new HashSet(getOffenseSubjects(offense));
         ArrayList<Party> offenseSubjectsArrayList = new ArrayList(offenseSubjects);
         def Document reportDoc;
-
-//            if (offenseSubjects.isEmpty()) {
-//                throw new Exception("OffenseSubjects failed validation; empty");
-//            }
 
         try {
             if (!Files.exists(rootDir?.toPath())) {
@@ -439,6 +452,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 if (offenseUCRCodeRequiredWhenForceCategoryPresent.contains(relatedOffenseUCRCode)) {
                     //TODO forceCategoryCode review relatedOffense.cf_forceCategory
                     String forceCategoryCode = getForceCategoryCode(relatedOffense);
+                    logger.debug("forceCategoryCode:${forceCategoryCode}")
                     fileWriter.println("<j:OffenseForce>");
                     fileWriter.println("<j:ForceCategoryCode>${forceCategoryCode}</j:ForceCategoryCode>");
                     fileWriter.println("</j:OffenseForce>");
@@ -673,7 +687,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             }
 
             //<!--Element 34, Offender Number(s) to be related -->
-            if(Collections.disjoint(personAndPropertyUCROffenses, getUCROffenses(relatedCharges)) == false) {
+            if (Collections.disjoint(personAndPropertyUCROffenses, getUCROffenses(relatedCharges)) == false) {
                 for (def Party subject in offenseSubjects) {
                     for (victim in offenseVictims) {
                         def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }));
@@ -830,49 +844,71 @@ protected String getRace(Party party, Charge thisOffense) {
 }
 
 protected String getItemCategoryCode(Charge thisOffense) {
-    return thisOffense.cf_itemCategory ?: "08";
+    def String itemCategory = thisOffense.cf_itemCategory ?: "08";
+    if (Arrays.asList("MOTOR_VEHICLE_THEFT".split(",")).contains(getOffenseUCRCode(thisOffense))) {
+        itemCategory = "03";
+    } else if (Arrays.asList("LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-FROM_AUTO,LARCENY-PARTS_FROM_VEHICLE,LARCENY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
+        itemCategory = "08";
+    } else if (Arrays.asList("ARSON".split(",")).contains(getOffenseUCRCode(thisOffense))) {
+        itemCategory = "29";
+    }
+    return itemCategory;
 }
 
 protected String getItemStatus(Charge thisOffense) {
     def String itemStatus = thisOffense.cf_itemStatus == null || isAttempted(thisOffense) ? "NONE" : thisOffense.cf_itemStatus;
-
+logger.debug("assign1 itemStatus:${itemStatus}");
     if (Arrays.asList("BRIBERY,BURGLARY-BREAKING_ENTERING,KIDNAPPING-ABDUCTION,ROBBERY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         //Item Status Code must be NONE, RECOVERED, STOLEN or UNKNOWN
+        logger.debug("assign2 itemStatus:${itemStatus}");
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
 
     if (Arrays.asList("COUNTERFEIT-FORGERY,EXPORT_VIOLATIONS".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "COUNTERFEITED";
+        logger.debug("assign3 itemStatus:${itemStatus}");
     }
 
     if (Arrays.asList("DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "DESTROYED_DAMAGED_VANDALIZED";
+        logger.debug("assign4 itemStatus:${itemStatus}");
     }
 
     if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION,IDENTITY_THEFT LARCENY,LARCENY-FROM_AUTO LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
+        logger.debug("assign5 itemStatus:${itemStatus}");
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
 
     if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION IDENTITY_THEFT,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
+        logger.debug("assign6 itemStatus:${itemStatus}");
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
 
     if (!isAttempted(thisOffense) && Arrays.asList("BETTING-WAGERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,GAMBLING-EQUIPMENT_VIOLATION,SPORTS_TAMPERING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "SEIZED";
+        logger.debug("assign7 itemStatus:${itemStatus}");
     }
 
     // Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be NONE, RECOVERED, STOLEN or UNKNOWN
     if (Arrays.asList("BRIBERY,BURGLARY-BREAKING_ENTERING,KIDNAPPING-ABDUCTION".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
+        logger.debug("assign8 itemStatus:${itemStatus}");
     }
 
     //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
     if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION,IDENTITY_THEFT,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
+        logger.debug("assign9 itemStatus:${itemStatus}");
+    }
+
+    if (Arrays.asList("ARSON".split(",")).contains(getOffenseUCRCode(thisOffense))) {
+        itemStatus = isAttempted(thisOffense) ? "NONE" : "BURNED";
+        logger.debug("assign10 itemStatus:${itemStatus}");
     }
     thisOffense.cf_itemStatus = itemStatus;
+    logger.debug("assign11 itemStatus:${itemStatus}");
     return itemStatus;
 }
 
@@ -1028,12 +1064,12 @@ protected void addDocumentToDocuments(Case cse, Document document) {
 
 protected List<String> getUCROffenses(List<Charge> offenses) {
     List<String> ucrOffenses = new ArrayList();
-    offenses.each({Charge it -> ucrOffenses.add(it.collect("chargeAttributes")?.find({ attr -> attr != null })) });
+    offenses.each({ Charge it -> ucrOffenses.add(it.collect("chargeAttributes")?.find({ attr -> attr != null })) });
     return ucrOffenses;
 }
 
 protected String getForceCategoryCode(Charge thisOffense) {
-    def String forceCategoryCode = !thisOffense.cf_forceCategory?.isEmpty() ? thisOffense.cf_forceCategory : "99";
+    def String forceCategoryCode = thisOffense.cf_forceCategory != null ? thisOffense.cf_forceCategory : "99";
 
 // AGGRAVATED_ASSAULT when Weapon/Force is used, one of the following URC codes is required
     ArrayList<String> offenseUCRCodeRequiredWhenFireArmsWeapons = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT".split(",")));
