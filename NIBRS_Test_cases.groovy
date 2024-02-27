@@ -53,5 +53,9 @@ DomainObject.saveOrUpdateAll(chargesToSave);
 DomainObject.saveOrUpdate(secondParty);
 */
 
-RichList<Document> allDocs = (RichList)DomainObject.find(Document.class, "case.id", 20490L, "case.caseNumber", "23-44")
-DomainObject.deleteAll(allDocs, true);
+//DomainObject.deleteAll(DomainObject.find(Document.class, "case.id", 20490L, "case.caseNumber", "23-44"), true);
+DomainObject.deleteAll(DomainObject.find(Document.class, "docDef.shortName", "NIBRSA"), true);
+
+logger.debug(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L).size());
+
+//DomainObject.deleteAll(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L), true);

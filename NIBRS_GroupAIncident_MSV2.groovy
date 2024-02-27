@@ -256,7 +256,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     whereCharge.addIsNotNull("chargeAttributes");
     whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupA);
 
-    whereCharge.addEquals("id",764L)
+    //whereCharge.addEquals("id",764L)
 
     if (_cse != null) {
         whereCharge.addEquals("associatedParty.case", _cse);
@@ -540,16 +540,19 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
 
             for (victim in offenseVictims) {
+                def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }));
+
+                def boolean isStatutoryRape = victimURCOffenses.contains("RAPE-STATUTORY") ?: false;
                 fileWriter.println("<nc:Person s:id='" + "PersonVictim${victim.id}" + "'>");
                 if (Collections.disjoint(victimCategoryCodeSocietyRequiredUCR, getUCROffenses(relatedCharges)) == true) {
                     //<!-- Element 26, Age of Victim (only one would be included per victim)-->
                     fileWriter.println("<nc:PersonAgeMeasure>");
-                    if (getAge(victim) != null) {
+                    if (getAge(victim) != null && !isStatutoryRape) {
                         fileWriter.println("<nc:MeasureIntegerValue>${getAge(victim)}</nc:MeasureIntegerValue>");
                     } else {
                         fileWriter.println("<nc:MeasureIntegerRange>");
-                        fileWriter.println("<nc:RangeMaximumIntegerValue>${maxAgeRange}</nc:RangeMaximumIntegerValue>");
-                        fileWriter.println("<nc:RangeMinimumIntegerValue>${minAgeRange}</nc:RangeMinimumIntegerValue>");
+                        fileWriter.println("<nc:RangeMaximumIntegerValue>${isStatutoryRape ? 17 : maxAgeRange}</nc:RangeMaximumIntegerValue>");
+                        fileWriter.println("<nc:RangeMinimumIntegerValue>${isStatutoryRape ? 12 : minAgeRange}</nc:RangeMinimumIntegerValue>");
                         fileWriter.println("</nc:MeasureIntegerRange>");
                     }
 
@@ -777,7 +780,8 @@ protected ArrayList<Party> getOffenseVictims(ArrayList<Charge> offenses, String 
         if (!ucrOffenseVictimsList.isEmpty()) {
             ucrOffenseVictims.addAll(ucrOffenseVictimsList);
         } else {
-            def Party offenseVictim = createOffenseVictim(cse);
+            def Party defaultParty = DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE","case.id", cse.id, "person.id", 35291L).find({Party it -> it != null});
+            def Party offenseVictim = defaultParty != null ? defaultParty : createOffenseVictim(cse);
             ucrOffenseVictims.add(offenseVictim);
             offense.addCrossReference(offenseVictim, "VICTIMOF")
         }
@@ -997,16 +1001,6 @@ protected List<Charge> getRelatedChargesLimitedByExcludingListCharges(ArrayList<
         theseChargesFiltered.addAll(theseCharges.findAll({ it -> !excludeCharges.contains(getOffenseUCRCode(it)) }));
         return theseChargesFiltered;
     } else return theseCharges;
-}
-
-protected List<Charge> getRelatedChargesLimitedByExcludingCrimesAgainsSociety(ArrayList<Charge> theseCharges, ArrayList<String> crimesAgainstSociety) {
-    ArrayList<Charge> theseChargesFiltered = new ArrayList();
-    if (!theseCharges.findAll({ it -> !crimesAgainstSociety.contains(getOffenseUCRCode(it)) }).isEmpty() && theseCharges.findAll({ it -> crimesAgainstSociety.contains(getOffenseUCRCode(it)) }).isEmpty()) {
-        theseChargesFiltered.addAll(theseCharges.find({ it -> !crimesAgainstSociety.contains(getOffenseUCRCode(it)) }))
-    } else {
-        theseChargesFiltered.addAll(theseCharges);
-    }
-    return theseChargesFiltered;
 }
 
 protected List<Charge> getRelatedChargesLimit10(ArrayList<Charge> theseCharges) {
