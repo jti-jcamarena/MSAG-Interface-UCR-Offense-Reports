@@ -1019,7 +1019,7 @@ protected String getItemQuantity(Charge thisOffense) {
 }
 
 protected boolean isExceptionalClearanceAtoE(Charge thisOffense) {
-    if (thisOffense.cf_indicentExceptionalClear.matches("[A-E]")) {
+    if (thisOffense.cf_indicentExceptionalClear?.matches("[A-E]")) {
         return true;
     } else {
         return false;
