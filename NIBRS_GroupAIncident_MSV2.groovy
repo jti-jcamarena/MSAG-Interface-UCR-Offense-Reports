@@ -260,7 +260,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
     whereCharge.addIsNull("associatedParty.mFCU_ASR_Results")
 
-    //whereCharge.addEquals("associatedParty", Party.get(32805L))
+    whereCharge.addEquals("associatedParty", Party.get(32524L))
 
     //whereCharge.addEquals("id",764L)
 
@@ -633,7 +633,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 }
 
                 fileWriter.println("<j:VictimCategoryCode>${victimCategoryCode}</j:VictimCategoryCode>");
-                if (["09A", "09B", "09C", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+
+//                if (["09A", "09B", "09C", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+                if(Collections.disjoint(victimOffenseUCRCodes, ["AGGRAVATED_ASSAULT", "MANSLAUGHTER_NONNEGLIGENT-MURDER","MANSLAUGHTER_NEGLIGENT","JUSTIFIABLE_HOMICIDE"]) == false){
                     def String victimAggravatedAssaultHomicideFactorCode = "";
                     if (!Collections.disjoint(victimURCOffenses, ["AGGRAVATED_ASSAULT", "MANSLAUGHTER_NONNEGLIGENT-MURDER"])) {
                         victimAggravatedAssaultHomicideFactorCode = "10";
@@ -648,7 +650,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                         fileWriter.println("<j:VictimAggravatedAssaultHomicideFactorCode>${victimAggravatedAssaultHomicideFactorCode}</j:VictimAggravatedAssaultHomicideFactorCode>");
                     }
                 }
-                if (["09C"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+
+//                if (["09C"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
+                if(Collections.disjoint(victimOffenseUCRCodes, ["JUSTIFIABLE_HOMICIDE"]) == false){
                     String victimJustifiableHomicideFactorCode = "C";
                     //<!-- Element 32, Additional Justifiable Homicide Circumstances -->
                     fileWriter.println("<j:VictimJustifiableHomicideFactorCode>${victimJustifiableHomicideFactorCode}</j:VictimJustifiableHomicideFactorCode>");
