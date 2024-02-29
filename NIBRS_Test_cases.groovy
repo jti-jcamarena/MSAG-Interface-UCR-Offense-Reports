@@ -4,7 +4,7 @@ import com.sustain.cases.model.Party;
 import com.sustain.expression.Where;
 import com.sustain.cases.model.Charge
 import com.sustain.util.RichList;
-
+import com.sustain.entities.custom.MFCU_ASR_Result;
 /*
 def Where where = new Where()
         //.addContainsAny("parties.partyType", ["VICTIM","DEFENDANT"])
@@ -59,3 +59,6 @@ DomainObject.deleteAll(DomainObject.find(Document.class, "docDef.shortName", "NI
 logger.debug(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L).size());
 
 //DomainObject.deleteAll(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L), true);
+
+//DomainObject.deleteAll(DomainObject.find(MFCU_ASR_Result.class), true);
+

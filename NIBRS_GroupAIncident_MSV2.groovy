@@ -46,6 +46,13 @@ personAndPropertyUCROffenses.addAll(propertyUCROffenses);
 def ArrayList<String> societyUCROffenses =
         Arrays.asList("BETTING-WAGERING,PROSTITUTION,WEAPON_LAW_VIOLATIONS,OBSCENE_MATERIAL-PORNOGRAPHY,GAMBLING-EQUIPMENT_VIOLATION,DRUG-NARCOTIC_VIOLATIONS,SPORTS_TAMPERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,DRUG-EQUIPMENT_VIOLATIONS,PROSTITUTION-ASSISTING_OR_PROMOTING,CRUELTY_TO_ANIMALS,PROSTITUTION-PURCHASING".split(","));
 
+ArrayList<String> offenseUCRCodeGroupA = new ArrayList();
+offenseUCRCodeGroupA.addAll(personUCROffenses);
+offenseUCRCodeGroupA.addAll(propertyUCROffenses);
+offenseUCRCodeGroupA.addAll(societyUCROffenses);
+
+//ArrayList<String> offenseUCRCodeGroupA = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT,ARSON,ASSAULT-SIMPLE,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,CRUELTY_TO_ANIMALS,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,ESPIONAGE,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FONDLING,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION,FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION,FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,IDENTITY_THEFT,IMMIGRATION-FALSE_CITIZENSHIP,IMMIGRATION-ILLEGAL_ENTRY_INTO_US,IMMIGRATION-OTHER_IMMIGRATION_VIOLATIONS,IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION,IMMIGRATION-SMUGGLING_ALIENS,IMPORT_VIOLATIONS,INCEST,INTIMIDATION,JUSTIFIABLE_HOMICIDE,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MANSLAUGHTER_NEGLIGENT,MANSLAUGHTER_NONNEGLIGENT-MURDER,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,OBSCENE_MATERIAL-PORNOGRAPHY,POCKET_PICKING,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,PURSE_SNATCHING,RAPE,RAPE-STATUTORY,ROBBERY,SEX_ASSAULT-OBJECT,SEX_OFFENDER_REGISTRATION_VIOLATION,SHOPLIFTING,SODOMY,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,TREASON,WEAPON_LAW_VIOLATIONS,WEAPONS_OF_MASS_DESTRUCTION,WILDLIFE_TRAFFICKING".split(",")));
+
 //Victim Injury Type must be specified when Victim Connected to UCR Offense Code is one of: 100, 11A, 11B, 11C, 11D, 120, 13A, 13B, 210, 64A, 64B
 def ArrayList<String> victimInjuryTypeRequiredUCR =
         Arrays.asList("KIDNAPPING-ABDUCTION,RAPE,SODOMY,SEX_ASSAULT-OBJECT,FONDLING,ROBBERY,AGGRAVATED_ASSAULT,ASSAULT-SIMPLE,EXTORTION-BLACKMAIL,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE".split(","));
@@ -219,10 +226,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
     String criminalActivityCategoryCode;
 
-    ArrayList<String> offenseUCRCodeGroupA = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT,ARSON,ASSAULT-SIMPLE,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,CRUELTY_TO_ANIMALS,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,ESPIONAGE,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FONDLING,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION,FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION,FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,IDENTITY_THEFT,IMMIGRATION-FALSE_CITIZENSHIP,IMMIGRATION-ILLEGAL_ENTRY_INTO_US,IMMIGRATION-OTHER_IMMIGRATION_VIOLATIONS,IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION,IMMIGRATION-SMUGGLING_ALIENS,IMPORT_VIOLATIONS,INCEST,INTIMIDATION,JUSTIFIABLE_HOMICIDE,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MANSLAUGHTER_NEGLIGENT,MANSLAUGHTER_NONNEGLIGENT-MURDER,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,OBSCENE_MATERIAL-PORNOGRAPHY,POCKET_PICKING,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,PURSE_SNATCHING,RAPE,RAPE-STATUTORY,ROBBERY,SEX_ASSAULT-OBJECT,SEX_OFFENDER_REGISTRATION_VIOLATION,SHOPLIFTING,SODOMY,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,TREASON,WEAPON_LAW_VIOLATIONS,WEAPONS_OF_MASS_DESTRUCTION,WILDLIFE_TRAFFICKING".split(",")));
-
-// When victim type is S, one of the following URC codes is required
-    ArrayList<String> offenseUCRCodeAreCrimesAgainsSocietyRequireVictimTypeS = new ArrayList<>(Arrays.asList("CRUELTY_TO_ANIMALS,OBSCENE_MATERIAL-PORNOGRAPHY,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,DRUG-NARCOTIC_VIOLATIONS,DRUG-EQUIPMENT_VIOLATIONS,BETTING-WAGERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,GAMBLING-EQUIPMENT_VIOLATION,SPORTS_TAMPERING,WEAPON_LAW_VIOLATIONS".split(",")));
 
 // The following UCR Codes requires the property entity
     ArrayList<String> offenseUCRCodeRequiresProperty = new ArrayList<>(Arrays.asList("ARSON,BAD_CHECKS,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,IDENTITY_THEFT,IMPORT_VIOLATIONS,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,WEAPONS_OF_MASS_DESTRUCTION".split(",")));
@@ -254,7 +257,10 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     whereCharge.addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart));
     whereCharge.addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd));
     whereCharge.addIsNotNull("chargeAttributes");
-    whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupA);
+    whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
+    whereCharge.addIsNull("associatedParty.mFCU_ASR_Results")
+
+    //whereCharge.addEquals("associatedParty", Party.get(32805L))
 
     //whereCharge.addEquals("id",764L)
 
@@ -272,7 +278,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             });
 
     logger.debug("Cases: ${offenses.associatedParty.case.unique({ it -> it.id })}");
-    logger.debug("Charges: ${offenses}");
+    logger.debug("Charges: ${offenses.size()}");
 
     String victimFilterXrefChargeVictim = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null]";
     String victimFilterXrefChargeVictimById = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null && id == #p1]";
@@ -292,7 +298,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     }
     def ArrayList<Charge> processedRelatedOffenses = new ArrayList<>();
     for (def Charge offense in offenses) {
-
+        logger.debug("offense loop: ${offense}");
         processedRelatedOffenses.add(offense);
         Case cse = offense.associatedParty.case;
         String caseCounty = cse.county;
@@ -307,8 +313,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 //        def ArrayList<Party> offenseVictims = getOffenseVictims(offense, victimFilterXrefChargeVictim);
         def ArrayList<Party> offenseVictims = getOffenseVictims(relatedCharges, victimFilterXrefChargeVictim);
 
-        logger.debug("offense victims xref: " + offense.collect(victimFilterXrefChargeVictim));
-        logger.debug("offense victims default: ${offenseVictims}");
+//        logger.debug("offense victims xref: " + offense.collect(victimFilterXrefChargeVictim));
+//        logger.debug("offense victims default: ${offenseVictims}");
 
 //        for (def Party victim in offenseVictims) {
         Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_x${relatedCharges.size()}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
@@ -452,7 +458,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 if (offenseUCRCodeRequiredWhenForceCategoryPresent.contains(relatedOffenseUCRCode)) {
                     //TODO forceCategoryCode review relatedOffense.cf_forceCategory
                     String forceCategoryCode = getForceCategoryCode(relatedOffense);
-                    logger.debug("forceCategoryCode:${forceCategoryCode}")
+//                    logger.debug("forceCategoryCode:${forceCategoryCode}")
                     fileWriter.println("<j:OffenseForce>");
                     fileWriter.println("<j:ForceCategoryCode>${forceCategoryCode}</j:ForceCategoryCode>");
                     fileWriter.println("</j:OffenseForce>");
@@ -598,7 +604,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
             for (victim in offenseVictims) {
                 def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }))
-                logger.debug("victimURCOffenses:${victimURCOffenses}");
+//                logger.debug("victimURCOffenses:${victimURCOffenses}");
                 fileWriter.println("<j:Victim s:id='" + "Victim${victim.id}" + "'>");
                 fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}" + "'/>");
                 //<!-- Element 23, Victim Sequence Number -->
@@ -850,58 +856,58 @@ protected String getItemCategoryCode(Charge thisOffense) {
 
 protected String getItemStatus(Charge thisOffense) {
     def String itemStatus = thisOffense.cf_itemStatus == null || isAttempted(thisOffense) ? "NONE" : thisOffense.cf_itemStatus;
-logger.debug("assign1 itemStatus:${itemStatus}");
+//logger.debug("assign1 itemStatus:${itemStatus}");
     if (Arrays.asList("BRIBERY,BURGLARY-BREAKING_ENTERING,KIDNAPPING-ABDUCTION,ROBBERY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         //Item Status Code must be NONE, RECOVERED, STOLEN or UNKNOWN
-        logger.debug("assign2 itemStatus:${itemStatus}");
+//        logger.debug("assign2 itemStatus:${itemStatus}");
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
 
     if (Arrays.asList("COUNTERFEIT-FORGERY,EXPORT_VIOLATIONS".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "COUNTERFEITED";
-        logger.debug("assign3 itemStatus:${itemStatus}");
+//        logger.debug("assign3 itemStatus:${itemStatus}");
     }
 
     if (Arrays.asList("DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "DESTROYED_DAMAGED_VANDALIZED";
-        logger.debug("assign4 itemStatus:${itemStatus}");
+//        logger.debug("assign4 itemStatus:${itemStatus}");
     }
 
     if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION,IDENTITY_THEFT LARCENY,LARCENY-FROM_AUTO LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
-        logger.debug("assign5 itemStatus:${itemStatus}");
+//        logger.debug("assign5 itemStatus:${itemStatus}");
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
 
     if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION IDENTITY_THEFT,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
-        logger.debug("assign6 itemStatus:${itemStatus}");
+//        logger.debug("assign6 itemStatus:${itemStatus}");
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
     }
 
     if (!isAttempted(thisOffense) && Arrays.asList("BETTING-WAGERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,GAMBLING-EQUIPMENT_VIOLATION,SPORTS_TAMPERING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "SEIZED";
-        logger.debug("assign7 itemStatus:${itemStatus}");
+//        logger.debug("assign7 itemStatus:${itemStatus}");
     }
 
     // Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be NONE, RECOVERED, STOLEN or UNKNOWN
     if (Arrays.asList("BRIBERY,BURGLARY-BREAKING_ENTERING,KIDNAPPING-ABDUCTION".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
-        logger.debug("assign8 itemStatus:${itemStatus}");
+//        logger.debug("assign8 itemStatus:${itemStatus}");
     }
 
     //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
     if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION,IDENTITY_THEFT,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
-        logger.debug("assign9 itemStatus:${itemStatus}");
+//        logger.debug("assign9 itemStatus:${itemStatus}");
     }
 
     if (Arrays.asList("ARSON".split(",")).contains(getOffenseUCRCode(thisOffense))) {
         itemStatus = isAttempted(thisOffense) ? "NONE" : "BURNED";
-        logger.debug("assign10 itemStatus:${itemStatus}");
+//        logger.debug("assign10 itemStatus:${itemStatus}");
     }
     thisOffense.cf_itemStatus = itemStatus;
-    logger.debug("assign11 itemStatus:${itemStatus}");
+//    logger.debug("assign11 itemStatus:${itemStatus}");
     return itemStatus;
 }
 

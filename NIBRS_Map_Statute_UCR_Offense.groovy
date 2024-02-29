@@ -11,8 +11,25 @@ import java.time.Month
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters;
+import java.util.Collections;
 
-ArrayList<String> offenseUCRCodeGroupA = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT,ARSON,ASSAULT-SIMPLE,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,CRUELTY_TO_ANIMALS,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,ESPIONAGE,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FONDLING,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION,FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION,FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,IDENTITY_THEFT,IMMIGRATION-FALSE_CITIZENSHIP,IMMIGRATION-ILLEGAL_ENTRY_INTO_US,IMMIGRATION-OTHER_IMMIGRATION_VIOLATIONS,IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION,IMMIGRATION-SMUGGLING_ALIENS,IMPORT_VIOLATIONS,INCEST,INTIMIDATION,JUSTIFIABLE_HOMICIDE,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MANSLAUGHTER_NEGLIGENT,MANSLAUGHTER_NONNEGLIGENT-MURDER,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,OBSCENE_MATERIAL-PORNOGRAPHY,POCKET_PICKING,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,PURSE_SNATCHING,RAPE,RAPE-STATUTORY,ROBBERY,SEX_ASSAULT-OBJECT,SEX_OFFENDER_REGISTRATION_VIOLATION,SHOPLIFTING,SODOMY,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,TREASON,WEAPON_LAW_VIOLATIONS,WEAPONS_OF_MASS_DESTRUCTION,WILDLIFE_TRAFFICKING".split(",")));
+//Person offenses:
+def ArrayList<String> personUCROffenses =
+        Arrays.asList("RAPE-STATUTORY,JUSTIFIABLE_HOMICIDE,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,SODOMY,RAPE,ASSAULT-SIMPLE,FONDLING,INCEST,MANSLAUGHTER_NONNEGLIGENT-MURDER,SEX_ASSAULT-OBJECT,KIDNAPPING-ABDUCTION,AGGRAVATED_ASSAULT,INTIMIDATION,MANSLAUGHTER_NEGLIGENT".split(","));
+
+//Property offenses:
+def ArrayList<String> propertyUCROffenses =
+        Arrays.asList("EMBEZZLEMENT,LARCENY-FROM_AUTO,COUNTERFEIT-FORGERY,LARCENY,BURGLARY-BREAKING_ENTERING,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,SHOPLIFTING,IDENTITY_THEFT,ARSON,FRAUD-WELFARE_FRAUD,ROBBERY,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,STOLEN_PROPERTY_OFFENSES,FRAUD-BY_WIRE,LARCENY-FROM_BUILDING,BRIBERY,FRAUD-IMPERSONATION,EXTORTION-BLACKMAIL,HACKING-COMPUTER_INVASION,LARCENY-PARTS_FROM_VEHICLE,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,LARCENY-FROM_COIN_OPERATED_MACHINE".split(","));
+
+//Society offenses:
+def ArrayList<String> societyUCROffenses =
+        Arrays.asList("BETTING-WAGERING,PROSTITUTION,WEAPON_LAW_VIOLATIONS,OBSCENE_MATERIAL-PORNOGRAPHY,GAMBLING-EQUIPMENT_VIOLATION,DRUG-NARCOTIC_VIOLATIONS,SPORTS_TAMPERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,DRUG-EQUIPMENT_VIOLATIONS,PROSTITUTION-ASSISTING_OR_PROMOTING,CRUELTY_TO_ANIMALS,PROSTITUTION-PURCHASING".split(","));
+
+ArrayList<String> offenseUCRCodeGroupA = new ArrayList();
+offenseUCRCodeGroupA.addAll(personUCROffenses);
+offenseUCRCodeGroupA.addAll(propertyUCROffenses);
+offenseUCRCodeGroupA.addAll(societyUCROffenses);
+
 def int report_year = _report_year == null ? 0 : Integer.parseInt(_report_year);
 def int report_month = _report_month == null ? 0 : Month.valueOf(_report_month).getValue();
 def LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Chicago")).withNano(0);
@@ -32,28 +49,40 @@ Where whereCharge = new Where();
 whereCharge.addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart));
 whereCharge.addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd));
 whereCharge.addIsNull("chargeAttributes");
-//whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupA);
+whereCharge.addIsNull("associatedParty.mFCU_ASR_Results");
 
 def Where where = new Where()
         .addEquals("lookupList.name", "CHARGE_ATTRIBUTES")
         .addIsNull("activeTo");
 
-def ArrayList<Charge> charges = DomainObject.find(Charge.class, "id", 432L, whereCharge);
+def ArrayList<Charge> charges = DomainObject.find(Charge.class, whereCharge);
 def ArrayList<LookupItem> items = DomainObject.find(LookupItem.class, where);
-
+logger.debug("items:${items.code}");
 def ArrayList<Charge> chargesToUpdate = new ArrayList<>();
+logger.debug("charges:${charges.size()}");
 
 for (Charge charge in charges) {
     def String sectionName = charge.statute.sectionName;
-    def List<String> sectionNameTokenized = sectionName.replaceAll("\\W"," ").toUpperCase().tokenize();
-    logger.debug("sectionNameTokenized:${sectionNameTokenized}");
+    def List<String> sectionNameTokenized = sectionName.replaceAll("\\W", " ").toUpperCase().tokenize().unique({ it -> it });
     def String ucrOffense = "";
+
+
+/*    if (!charge.getChargeAttributes().isEmpty()){
+        charge.setChargeAttributes(new HashSet<>());
+        chargesToUpdate.add(charge);
+    }*/
+
     for (String code in items.code) {
-        def List<String> codeTokenized = Arrays.asList(code.toUpperCase().split("[_-]"));
-        if (!Collections.disjoint(sectionNameTokenized, codeTokenized)) {
+        def ArrayList<String> codeTokenized = Arrays.asList(code.toUpperCase().split("[_-]").toUnique({ it -> it }));
+        def ArrayList<String> codeTokenizedRetainAll = Arrays.asList(code.toUpperCase().split("[_-]").toUnique({ it -> it }));
+        codeTokenizedRetainAll.retainAll(sectionNameTokenized);
+
+        if (codeTokenized.size() == codeTokenizedRetainAll.size() || codeTokenized.size() > 1 && codeTokenizedRetainAll.size() > 1) {
+//            logger.debug("retainall 1: ${sectionNameTokenized} ${codeTokenized}");
             HashSet<String> attributes = new HashSet<>();
             attributes.add(code);
-            logger.debug("codeTokenized:${codeTokenized}");
+            //logger.debug("sectionNameTokenized:${sectionNameTokenized}");
+//            logger.debug("codeTokenized:${codeTokenized}; sectionNameTokenized:${sectionNameTokenized}");
             charge.setChargeAttributes(attributes);
             chargesToUpdate.add(charge);
             break;
