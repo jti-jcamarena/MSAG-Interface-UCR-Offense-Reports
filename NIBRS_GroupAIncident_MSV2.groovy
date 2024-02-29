@@ -253,16 +253,16 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     ArrayList<String> passagePointMethodCode = new ArrayList<>(Arrays.asList("F,N".split(",")));
 
 // Charges to submit
-    Where whereCharge = new Where();
-    whereCharge.addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart));
-    whereCharge.addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd));
-    whereCharge.addIsNotNull("chargeAttributes");
-    whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
-    whereCharge.addIsNull("associatedParty.mFCU_ASR_Results")
+    Where whereCharge = new Where()
+            .addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart))
+            .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
+            .addIsNotNull("chargeAttributes")
+            .addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
+            .addIsNull("associatedParty.mFCU_ASR_Results")
 
-    whereCharge.addEquals("associatedParty", Party.get(32524L))
+            //.addEquals("associatedParty", Party.get(32524L))
 
-    //whereCharge.addEquals("id",764L)
+            //.addEquals("id", 764L)
 
     if (_cse != null) {
         whereCharge.addEquals("associatedParty.case", _cse);
@@ -635,7 +635,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 fileWriter.println("<j:VictimCategoryCode>${victimCategoryCode}</j:VictimCategoryCode>");
 
 //                if (["09A", "09B", "09C", "13A"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
-                if(Collections.disjoint(victimOffenseUCRCodes, ["AGGRAVATED_ASSAULT", "MANSLAUGHTER_NONNEGLIGENT-MURDER","MANSLAUGHTER_NEGLIGENT","JUSTIFIABLE_HOMICIDE"]) == false){
+                if (Collections.disjoint(victimOffenseUCRCodes, ["AGGRAVATED_ASSAULT", "MANSLAUGHTER_NONNEGLIGENT-MURDER", "MANSLAUGHTER_NEGLIGENT", "JUSTIFIABLE_HOMICIDE"]) == false) {
                     def String victimAggravatedAssaultHomicideFactorCode = "";
                     if (!Collections.disjoint(victimURCOffenses, ["AGGRAVATED_ASSAULT", "MANSLAUGHTER_NONNEGLIGENT-MURDER"])) {
                         victimAggravatedAssaultHomicideFactorCode = "10";
@@ -652,7 +652,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 }
 
 //                if (["09C"].contains(offensesMap.get(getOffenseUCRCode(offense)))) {
-                if(Collections.disjoint(victimOffenseUCRCodes, ["JUSTIFIABLE_HOMICIDE"]) == false){
+                if (Collections.disjoint(victimOffenseUCRCodes, ["JUSTIFIABLE_HOMICIDE"]) == false) {
                     String victimJustifiableHomicideFactorCode = "C";
                     //<!-- Element 32, Additional Justifiable Homicide Circumstances -->
                     fileWriter.println("<j:VictimJustifiableHomicideFactorCode>${victimJustifiableHomicideFactorCode}</j:VictimJustifiableHomicideFactorCode>");
@@ -790,7 +790,7 @@ protected ArrayList<Party> getOffenseVictims(ArrayList<Charge> offenses, String 
         if (!ucrOffenseVictimsList.isEmpty()) {
             ucrOffenseVictims.addAll(ucrOffenseVictimsList);
         } else {
-            def Party defaultParty = DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE","case.id", cse.id, "person.id", 35291L).find({Party it -> it != null});
+            def Party defaultParty = DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", cse.id, "person.id", 35291L).find({ Party it -> it != null });
             def Party offenseVictim = defaultParty != null ? defaultParty : createOffenseVictim(cse);
             ucrOffenseVictims.add(offenseVictim);
             offense.addCrossReference(offenseVictim, "VICTIMOF")

@@ -51,7 +51,7 @@ Where whereCharge = new Where()
         .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
         .addIsNull("chargeAttributes")
         .addIsNull("associatedParty.mFCU_ASR_Results")
-        .addEquals("associatedParty", Party.get(32524L))
+        //.addEquals("associatedParty", Party.get(32524L))
 
 def Where where = new Where()
         .addEquals("lookupList.name", "CHARGE_ATTRIBUTES")
@@ -102,7 +102,7 @@ Where whereCharge2 = new Where()
         .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
         .addIsNotNull("chargeAttributes")
         .addIsNull("associatedParty.mFCU_ASR_Results")
-        .addEquals("associatedParty", Party.get(32524L))
+        //.addEquals("associatedParty", Party.get(32524L))
 
 def ArrayList<Charge> ucrCharges = DomainObject.find(Charge.class, whereCharge2);
 def ArrayList<Party> subjects = ucrCharges.associatedParty.unique({ Party it -> it });
