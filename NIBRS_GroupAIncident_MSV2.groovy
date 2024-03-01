@@ -174,7 +174,6 @@ logger.debug("reporting period: ${_reportingPeriod}");
 def String interfaceName = "NIBRS_GroupAIncident";
 
 if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
-
     def DateTimeFormatter yearMonthFomatter = DateTimeFormatter.ofPattern("yyyy-MM");
     def String reportType = "GroupAIncidentReport";
     def String rootPath = "\\\\edc-isilon-smb\\ags2docsuat\\NIBRS";
