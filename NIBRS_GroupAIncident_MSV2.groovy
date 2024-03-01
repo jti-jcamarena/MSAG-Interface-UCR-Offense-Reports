@@ -316,6 +316,14 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 //        logger.debug("offense victims xref: " + offense.collect(victimFilterXrefChargeVictim));
 //        logger.debug("offense victims default: ${offenseVictims}");
 
+        relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
+        relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
+        relatedCharges = getRelatedChargesLimitedBySimpleAssault(relatedCharges);
+        relatedCharges = getRelatedChargesLimitedByIntimidation(relatedCharges);
+        relatedCharges = getRelatedChargeLimitedByUniqueOffenseUCRCode(relatedCharges);
+        relatedCharges = getRelatedChargesLimitedByRobbery(relatedCharges);
+        relatedCharges = getRelatedChargesLimit10(relatedCharges);
+
 //        for (def Party victim in offenseVictims) {
         Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_x${relatedCharges.size()}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
         File reportFile = reportPath.toFile();
@@ -405,14 +413,14 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             fileWriter.println("</j:IncidentAugmentation>");
             fileWriter.println("</nc:Incident>");
 
-//These filters prevent charges which are mutually exclusive from being reported in a incident report
-            relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
-            relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
-            relatedCharges = getRelatedChargesLimitedBySimpleAssault(relatedCharges);
-            relatedCharges = getRelatedChargesLimitedByIntimidation(relatedCharges);
-            relatedCharges = getRelatedChargeLimitedByUniqueOffenseUCRCode(relatedCharges);
-            relatedCharges = getRelatedChargesLimitedByRobbery(relatedCharges);
-            relatedCharges = getRelatedChargesLimit10(relatedCharges);
+////These filters prevent charges which are mutually exclusive from being reported in a incident report
+//            relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
+//            relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
+//            relatedCharges = getRelatedChargesLimitedBySimpleAssault(relatedCharges);
+//            relatedCharges = getRelatedChargesLimitedByIntimidation(relatedCharges);
+//            relatedCharges = getRelatedChargeLimitedByUniqueOffenseUCRCode(relatedCharges);
+//            relatedCharges = getRelatedChargesLimitedByRobbery(relatedCharges);
+//            relatedCharges = getRelatedChargesLimit10(relatedCharges);
 
             if (Collections.disjoint(getUCROffenses(relatedCharges), personAndPropertyUCROffenses) == false &&
                     Collections.disjoint(getUCROffenses(relatedCharges), societyUCROffenses) == false) {
@@ -807,7 +815,7 @@ protected Integer getAge(Party party) {
 protected String getGenderCode(Party party, Charge thisOffense) {
     def String gender = party.person.collect("profiles[gender != null].gender").find({ it -> it != null });
     if ((gender == null || !["MALE", "FEMALE"].contains(gender)) && isExceptionalClearanceAtoE(thisOffense) == false) {
-        gender = "U";
+        gender = "M"; //U
     } else if (gender == "FEMALE") {
         gender = "F";
     } else {
@@ -819,7 +827,7 @@ protected String getGenderCode(Party party, Charge thisOffense) {
 protected String getEthnicity(Party party, Charge thisOffense) {
     def String ethnicity = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
     if (ethnicity == null && isExceptionalClearanceAtoE(thisOffense) == false) {
-        ethnicity = "U";
+        ethnicity = "N"; //U
     } else if (ethnicity == "HISPANIC") {
         ethnicity = "H";
     } else {
@@ -831,7 +839,7 @@ protected String getEthnicity(Party party, Charge thisOffense) {
 protected String getRace(Party party, Charge thisOffense) {
     def String race = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
     if (isExceptionalClearanceAtoE(thisOffense) == false && (race == null || !["WHITE", "BLACK", "AMERICANINDIAN", "ASIAN", "NATIVEHAWAIIAN"].contains(race))) {
-        race = "U";
+        race = "W"; //U
     } else if (race == "BLACK") {
         race = "B";
     } else if (race == "AMERICANINDIAN") {
@@ -1002,7 +1010,7 @@ protected List<Charge> getRelatedChargesLimitedByIntimidation(ArrayList<Charge> 
 }
 
 protected List<Charge> getRelatedChargeLimitedByUniqueOffenseUCRCode(ArrayList<Charge> theseCharges) {
-    return theseCharges.unique({ it -> getOffenseUCRCode(it) });
+    return theseCharges.findAll({it -> getOffenseUCRCode(it) != null && !getOffenseUCRCode(it).isEmpty()}).unique({ it -> getOffenseUCRCode(it) });
 }
 
 protected List<Charge> getRelatedChargesLimitedByExcludingListCharges(ArrayList<Charge> theseCharges, ArrayList<String> excludeCharges) {
