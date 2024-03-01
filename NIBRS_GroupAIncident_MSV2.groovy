@@ -151,11 +151,13 @@ logger.debug("report year: ${report_year} report month: ${report_month}");
 //pst:America/Los_Angeles, cst:America/Chicago
 def LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Chicago")).withNano(0);
 String incidentDateTimeFormatted = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
-if (report_month != 0) {
-    localDateTime = localDateTime.withMonth(report_month);
-}
-if (report_year != 0) {
-    localDateTime = localDateTime.withYear(report_year);
+if (_overwrite_default_reporting_period == "true") {
+    if (report_month != 0) {
+        localDateTime = localDateTime.withMonth(report_month);
+    }
+    if (report_year != 0) {
+        localDateTime = localDateTime.withYear(report_year);
+    }
 }
 
 def LocalDate localDate = localDateTime.toLocalDate();
@@ -259,9 +261,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
             .addIsNull("associatedParty.mFCU_ASR_Results")
 
-            //.addEquals("associatedParty", Party.get(32524L))
+    //.addEquals("associatedParty", Party.get(32524L))
 
-            //.addEquals("id", 764L)
+    //.addEquals("id", 764L)
 
     if (_cse != null) {
         whereCharge.addEquals("associatedParty.case", _cse);
@@ -1009,7 +1011,7 @@ protected List<Charge> getRelatedChargesLimitedByIntimidation(ArrayList<Charge> 
 }
 
 protected List<Charge> getRelatedChargeLimitedByUniqueOffenseUCRCode(ArrayList<Charge> theseCharges) {
-    return theseCharges.findAll({it -> getOffenseUCRCode(it) != null && !getOffenseUCRCode(it).isEmpty()}).unique({ it -> getOffenseUCRCode(it) });
+    return theseCharges.findAll({ it -> getOffenseUCRCode(it) != null && !getOffenseUCRCode(it).isEmpty() }).unique({ it -> getOffenseUCRCode(it) });
 }
 
 protected List<Charge> getRelatedChargesLimitedByExcludingListCharges(ArrayList<Charge> theseCharges, ArrayList<String> excludeCharges) {
