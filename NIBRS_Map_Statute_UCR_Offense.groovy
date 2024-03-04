@@ -84,6 +84,14 @@ offensesMap.put("39C", "GAMBLING-EQUIPMENT_VIOLATION");//tested grouped
 //50
 offensesMap.put("39D", "SPORTS_TAMPERING");//tested grouped
 offensesMap.put("520", "WEAPON_LAW_VIOLATIONS");//tested grouped
+//Group B
+offensesMap.put("90C", "DISORDERLY_CONDUCT");//tested grouped
+offensesMap.put("90D", "DRIVING_UNDER_INFLUECE");//tested grouped
+offensesMap.put("90F", "FAMILY_OFFENSES-NONVIOLENT");//tested grouped
+offensesMap.put("90G", "LIQUOR_LAW_VIOLATIONS");//tested grouped
+offensesMap.put("90J", "TRASPASSING");//tested grouped
+offensesMap.put("90Z", "ALL_OTHER_OFFENSES");//tested grouped
+
 
 //Person offenses:
 def ArrayList<String> personUCROffenses =
