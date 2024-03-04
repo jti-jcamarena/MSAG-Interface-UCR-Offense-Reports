@@ -22,10 +22,6 @@ import com.sustain.expression.Where;
 
 
 //*All Group B offense UCR codes are invalid for MS NIBRS, this workflow/business rule is deactivated
-//*https://journaltech.sharepoint.com/:x:/s/MississippiAG/EegY8NK6owBEmQV-Z29xNh4BvLjC4KmD0-CsZNgnbsQu1w?e=grZ56N
-//*
-//*ZoneId is set to local value, America/Los_Angeles, for testing; the validation applicaiton xcota will fail a filing if the datatime is ahead of the local *time
-
 
 //offensesMap stores UCR offense label and code
 def Map offensesMap = new HashMap();
@@ -34,15 +30,10 @@ def Map offensesMap = new HashMap();
 offensesMap.put("ALL_OTHER_OFFENSES", "90Z");//failed  The Enumeration constraint failed
 
 //crimes against society
-offensesMap.put("FAILURE TO APPEAR", "90K");//failed  The Enumeration constraint failed
-offensesMap.put("CURFEW-LOITERING-VAGRANCY_VIOLATIONS", "90B");//failed  The Enumeration constraint failed
 offensesMap.put("DISORDERLY_CONDUCT", "90C");//failed  The Enumeration constraint failed
 offensesMap.put("DRIVING_UNDER_INFLUENCE", "90D");//failed  The Enumeration constraint failed
 offensesMap.put("FAMILY_OFFENSES_NONVIOLENT", "90F");//failed  The Enumeration constraint failed
-
-offensesMap.put("FEDERAL_RESOURCE_VIOLATIONS", "90L");//failed  The Enumeration constraint failed
 offensesMap.put("LIQUOR_LAW_VIOLATIONS", "90G");//failed  The Enumeration constraint failed
-offensesMap.put("PERJURY", "90M");//failed  The Enumeration constraint failed
 offensesMap.put("TRESPASSING", "90J");//failed  The Enumeration constraint failed
 
 def String internalTesting = SystemProperty.getValue("nibrs.email.testing") ?: "true";
@@ -165,16 +156,6 @@ logger.debug("TEST:1");
         String identificationID = agencyNumber != null && agencyNumber.number != null ? agencyNumber.number : "1234";
         String offenseUCRCode = getOffenseUCRCode(offense);
 
-        //TODO  review interface tracking detail
-//        CtInterfaceTrackingDetail interfaceTrackingDetail = new CtInterfaceTrackingDetail();
-//        interfaceTrackingDetail.ctInterfaceTracking = interfaceTracking;
-//        interfaceTrackingDetail.recordId = "";
-//        interfaceTrackingDetail.status = "";
-//        interfaceTrackingDetail.statusDate = Timestamp.valueOf(localDateTime);
-//        interfaceTrackingDetail.saveOrUpdate();
-//        interfaceTracking.add(interfaceTrackingDetail);
-//        interfaceTracking.saveOrUpdate();
-
         Path reportPath = Files.createTempFile(rootDir.toPath(), "${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
         File reportFile = reportPath.toFile();
         PrintWriter fileWriter = new PrintWriter(reportFile);
@@ -183,12 +164,6 @@ logger.debug("TEST:1");
             if (!Files.exists(rootDir?.toPath())) {
                 rootDir.mkdir();
             }
-//            fileWriter.println("""<?xml version="1.0" encoding="UTF-8"?>
-//<nibrs:Submission xmlns:nibrs="http://fbi.gov/cjis/nibrs/2019.2"
-//	xmlns:cjis="http://fbi.gov/cjis/2.1"
-//	xmlns:s="http://release.niem.gov/niem/structures/3.0/"
-//	xmlns:j="http://release.niem.gov/niem/domains/jxdm/5.2/"
-//	xmlns:nc="http://release.niem.gov/niem/niem-core/3.0/">""");
 
             fileWriter.println("""<nibrs:Submission xmlns:nibrs="http://fbi.gov/cjis/nibrs/4.2" 
 xmlns:cjis="http://fbi.gov/cjis/1.0" 
@@ -244,18 +219,6 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
             fileWriter.println("</j:OrganizationAugmentation>");
             fileWriter.println("</nibrs:ReportingAgency>");
             fileWriter.println("</nibrs:ReportHeader>");
-
-            //loop through offenses for offense location
-            //for (offense in offenses){
-            //<!-- Element 9, Location Type -->
-//            fileWriter.println("<nc:Location s:id='" + "Location${offense.id}" + "'>");
-//            fileWriter.println("<nibrs:LocationCategoryCode>50</nibrs:LocationCategoryCode>");
-//            fileWriter.println("<nc:LocationLocale>");
-//            fileWriter.println("<cjis:JudicialDistrictCode>${offense.cf_judicialDistrictCode != null ? offense.cf_judicialDistrictCode : judicialDistrictCode[0]}</cjis:JudicialDistrictCode>");
-//            logger.debug("OPTION:<cjis:JudicialDistrictCode>${offense.cf_judicialDistrictCode != null ? offense.cf_judicialDistrictCode : judicialDistrictCode[0]}");
-//            fileWriter.println("</nc:LocationLocale>");
-//            fileWriter.println("</nc:Location>");
-
 
             fileWriter.println("<nc:Person s:id='" + "PersonArrestee${subject.id}" + "'>");
             //<!-- Element 26, Age of Victim (only one would be included per victim)-->
@@ -319,7 +282,7 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
             fileWriter.close();
             attachmentFiles = new ArrayList<>(Arrays.asList(reportFile)).toArray(File[]);
             attachments = new Attachments(attachmentFiles);
-            mailManager.sendMailToAll(toEmails, ccEmails, bccEmails, emailSubject, emailBody, attachments);
+            mailManager.sendMailToAll(["jcamarena@journaltech.com"], ccEmails, bccEmails, emailSubject, emailBody, attachments);
             _fileOut = reportFile;
             Files.deleteIfExists(reportPath);
         } catch (Exception ex) {
@@ -328,14 +291,6 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
     }
 
 }
-/*************************************************************************************************************************/
-/*
-for (f in new File(rootPath).listFiles()){
-  logger.debug(f.toString());
-  Files.deleteIfExists(f.toPath());
-}
-*/
-
 
 protected String getOffenseUCRCode(Charge offense) {
     String code = offense.collect("chargeAttributes").find({ it -> it != null });
