@@ -51,8 +51,6 @@ offenseUCRCodeGroupA.addAll(personUCROffenses);
 offenseUCRCodeGroupA.addAll(propertyUCROffenses);
 offenseUCRCodeGroupA.addAll(societyUCROffenses);
 
-//ArrayList<String> offenseUCRCodeGroupA = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT,ARSON,ASSAULT-SIMPLE,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,CRUELTY_TO_ANIMALS,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,ESPIONAGE,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FONDLING,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,FUGITIVE-FLIGHT_TO_AVOID_DEPORTATION,FUGITIVE-FLIGHT_TO_AVOID_PROSECUTION,FUGITIVE-HARBORING_ESCAPEE-CONCEALING_FROM_ARREST,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,IDENTITY_THEFT,IMMIGRATION-FALSE_CITIZENSHIP,IMMIGRATION-ILLEGAL_ENTRY_INTO_US,IMMIGRATION-OTHER_IMMIGRATION_VIOLATIONS,IMMIGRATION-RE_ENTRY_AFTER_DEPORTATION,IMMIGRATION-SMUGGLING_ALIENS,IMPORT_VIOLATIONS,INCEST,INTIMIDATION,JUSTIFIABLE_HOMICIDE,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MANSLAUGHTER_NEGLIGENT,MANSLAUGHTER_NONNEGLIGENT-MURDER,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,OBSCENE_MATERIAL-PORNOGRAPHY,POCKET_PICKING,PROSTITUTION,PROSTITUTION-ASSISTING_OR_PROMOTING,PROSTITUTION-PURCHASING,PURSE_SNATCHING,RAPE,RAPE-STATUTORY,ROBBERY,SEX_ASSAULT-OBJECT,SEX_OFFENDER_REGISTRATION_VIOLATION,SHOPLIFTING,SODOMY,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,TREASON,WEAPON_LAW_VIOLATIONS,WEAPONS_OF_MASS_DESTRUCTION,WILDLIFE_TRAFFICKING".split(",")));
-
 //Victim Injury Type must be specified when Victim Connected to UCR Offense Code is one of: 100, 11A, 11B, 11C, 11D, 120, 13A, 13B, 210, 64A, 64B
 def ArrayList<String> victimInjuryTypeRequiredUCR =
         Arrays.asList("KIDNAPPING-ABDUCTION,RAPE,SODOMY,SEX_ASSAULT-OBJECT,FONDLING,ROBBERY,AGGRAVATED_ASSAULT,ASSAULT-SIMPLE,EXTORTION-BLACKMAIL,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE".split(","));
@@ -146,6 +144,7 @@ def String ucrstatEmailAddressCC = SystemProperty.getValue("nibrs.email.inbox.cc
 def int report_year = _report_year == null ? 0 : Integer.parseInt(_report_year);
 def int report_month = _report_month == null ? 0 : Month.valueOf(_report_month).getValue();
 logger.debug("report year: ${report_year} report month: ${report_month}");
+//offensesMap.sort({a,b -> a.value <=> b.value  }).each {it -> logger.debug("${it.value} ${it.key}")}
 
 
 //pst:America/Los_Angeles, cst:America/Chicago
@@ -260,6 +259,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .addIsNotNull("chargeAttributes")
             .addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
             .addIsNull("associatedParty.mFCU_ASR_Results")
+    //.addNotEquals("updateReason", "NIBRS")
+    //.addIsNotNull("statute.sectionCode")
+    //.addContainsAny("statute.sectionCode", offensesMap.values())
 
     //.addEquals("associatedParty", Party.get(32524L))
 
@@ -274,12 +276,13 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
     ArrayList<Charge> offenses = DomainObject.find(Charge.class, whereCharge)
             .findAll({ Charge it ->
-                it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() ||
-                        it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id == it.id }) != null
+                (it.updateReason == null || it.updateReason.isEmpty() || it.updateReason != "NIBRS") &&
+                        (it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() ||
+                        it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id == it.id }) != null)
             });
 
     logger.debug("Cases: ${offenses.associatedParty.case.unique({ it -> it.id })}");
-    logger.debug("Charges: ${offenses.size()}");
+    logger.debug("Charges: ${offenses}");
 
     String victimFilterXrefChargeVictim = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null]";
     String victimFilterXrefChargeVictimById = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null && id == #p1]";
@@ -294,9 +297,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     Attachments attachments;
     File[] attachmentFiles;
 
-    if (offenses.isEmpty()) {
-        throw new Exception("Offenses failed validation; empty");
-    }
     def ArrayList<Charge> processedRelatedOffenses = new ArrayList<>();
     for (def Charge offense in offenses) {
         logger.debug("offense loop: ${offense}");
@@ -523,6 +523,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
             for (def Charge relatedOffense in getChargeListUniqueBySubstanceData(relatedCharges.findAll({ Charge it -> substanceRelatedUCR.contains(getOffenseUCRCode(it)) }))) {
                 if (!Collections.disjoint(substanceRelatedUCR, getUCROffenses(relatedCharges))) {
+                    def String measureDecimalValue = relatedOffense.cf_measureDecimalValue ?: "1.5";
+                    def String drugCategoryCode = relatedOffense.cf_drugCategoryCode ?: "E";
+                    def String substanceUnitCode = relatedOffense.cf_substanceUnitCode ?: "OZ";
                     fileWriter.println("<nc:Substance>");
                     //<!-- Element 14, Type Property Loss/etc  Substituted for nc:ItemStatus -->
                     fileWriter.println("<nc:ItemStatus>");
@@ -543,11 +546,11 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                     //<!-- Element 15, Property Description -->
                     fileWriter.println("<j:ItemCategoryNIBRSPropertyCategoryCode>10</j:ItemCategoryNIBRSPropertyCategoryCode>");
                     //<!-- Element 20, Suspected Involved Drug Type -->
-                    fileWriter.println("<j:DrugCategoryCode>E</j:DrugCategoryCode>");
+                    fileWriter.println("<j:DrugCategoryCode>${drugCategoryCode}</j:DrugCategoryCode>");
                     fileWriter.println("<nc:SubstanceQuantityMeasure>");
                     //<!-- Element 21/22, Estimated Quantity/Fraction -->
-                    fileWriter.println("<nc:MeasureDecimalValue>1.5</nc:MeasureDecimalValue>");
-                    fileWriter.println("<j:SubstanceUnitCode>OZ</j:SubstanceUnitCode>");
+                    fileWriter.println("<nc:MeasureDecimalValue>${measureDecimalValue}</nc:MeasureDecimalValue>");
+                    fileWriter.println("<j:SubstanceUnitCode>${substanceUnitCode}</j:SubstanceUnitCode>");
                     fileWriter.println("</nc:SubstanceQuantityMeasure>");
                     fileWriter.println("</nc:Substance>");
                 }

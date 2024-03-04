@@ -2,9 +2,11 @@ import com.sustain.DomainObject;
 import com.sustain.cases.model.Case;
 import com.sustain.cases.model.Party;
 import com.sustain.expression.Where;
+import com.sustain.cases.model.Statute
 import com.sustain.cases.model.Charge
 import com.sustain.util.RichList;
 import com.sustain.entities.custom.MFCU_ASR_Result;
+
 /*
 def Where where = new Where()
         //.addContainsAny("parties.partyType", ["VICTIM","DEFENDANT"])
@@ -56,9 +58,20 @@ DomainObject.saveOrUpdate(secondParty);
 //DomainObject.deleteAll(DomainObject.find(Document.class, "case.id", 20490L, "case.caseNumber", "23-44"), true);
 DomainObject.deleteAll(DomainObject.find(Document.class, "docDef.shortName", "NIBRSA"), true);
 
-logger.debug(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L).size());
+ArrayList<Charge> chargesToUpdate = new ArrayList<>();
+DomainObject.find(Charge.class, "updateReason", "NIBRS").each {Charge it ->
+    it.updateReason = "";
+    chargesToUpdate.add(it);
+}
+DomainObject.saveOrUpdateAll(chargesToUpdate);
+
+//logger.debug(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L).size());
 
 //DomainObject.deleteAll(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L), true);
 
 //DomainObject.deleteAll(DomainObject.find(MFCU_ASR_Result.class), true);
+//Where where = new Where()
+//        .addIsNotNull("sectionCode")
+//DomainObject.find(Statute.class, where).unique({Statute it -> it.sectionCode}).sort({ Statute a, Statute b -> a.sectionCode <=> b.sectionCode })
+//        .each ({Statute it -> logger.debug(it.sectionCode)});
 
