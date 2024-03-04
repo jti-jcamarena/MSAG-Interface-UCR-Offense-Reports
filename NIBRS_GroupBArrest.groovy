@@ -1,8 +1,12 @@
+import com.sustain.DomainObject
+import com.sustain.cases.model.Case
+import com.sustain.document.model.Document
 import com.sustain.properties.model.SystemProperty
 
 import java.nio.file.Files;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalDateTime
+import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
 import java.sql.Timestamp;
@@ -20,62 +24,67 @@ import com.sustain.cases.model.Party;
 import com.sustain.expression.Where;
 
 
-
 //*All Group B offense UCR codes are invalid for MS NIBRS, this workflow/business rule is deactivated
 
 //offensesMap stores UCR offense label and code
 def Map offensesMap = new HashMap();
 //GROUP B OFFENSES
 //crimes against person, property, or society
-offensesMap.put("ALL_OTHER_OFFENSES", "90Z");//failed  The Enumeration constraint failed
+offensesMap.put("90Z", "ALL_OTHER_OFFENSES");//failed  The Enumeration constraint failed
 
 //crimes against society
-offensesMap.put("DISORDERLY_CONDUCT", "90C");//failed  The Enumeration constraint failed
-offensesMap.put("DRIVING_UNDER_INFLUENCE", "90D");//failed  The Enumeration constraint failed
-offensesMap.put("FAMILY_OFFENSES_NONVIOLENT", "90F");//failed  The Enumeration constraint failed
-offensesMap.put("LIQUOR_LAW_VIOLATIONS", "90G");//failed  The Enumeration constraint failed
-offensesMap.put("TRESPASSING", "90J");//failed  The Enumeration constraint failed
+offensesMap.put("90C", "DISORDERLY_CONDUCT");//tested
+offensesMap.put("90D", "DRIVING_UNDER_INFLUENCE");//failed  The Enumeration constraint failed
+offensesMap.put("90F", "FAMILY_OFFENSES_NONVIOLENT");//failed  The Enumeration constraint failed
+offensesMap.put("90G", "LIQUOR_LAW_VIOLATIONS");//failed  The Enumeration constraint failed
+offensesMap.put("90J", "TRESPASSING");//failed  The Enumeration constraint failed
 
 def String internalTesting = SystemProperty.getValue("nibrs.email.testing") ?: "true";
 def String ucrstatEmailAddress = SystemProperty.getValue("nibrs.email.inbox") ?: "";
 def String ucrstatEmailAddressCC = SystemProperty.getValue("nibrs.email.inbox.cc") ?: "";
 
 
-LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Los_Angeles"));
-LocalDate localDate = LocalDate.now();
-LocalDate localDateLastDayOfMonth = LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
+def int report_year = _report_year == null ? 0 : Integer.parseInt(_report_year);
+def int report_month = _report_month == null ? 0 : Month.valueOf(_report_month).getValue();
+logger.debug("report year: ${report_year} report month: ${report_month}");
 
 
-LocalDateTime localDateTimeStart = localDateTime.with(TemporalAdjusters.firstDayOfMonth()).withHour(0).withMinute(0).withSecond(0).withNano(0);
-LocalDateTime localDateTimeEnd = localDateTime.with(TemporalAdjusters.lastDayOfMonth()).withHour(23).withMinute(59).withSecond(58).withNano(999999999);
-DateTimeFormatter yearMonthFomatter = DateTimeFormatter.ofPattern("yyyy-MM");
-DateTimeFormatter yearMonthDayFomatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//pst:America/Los_Angeles, cst:America/Chicago
+def LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Chicago")).withNano(0);
+String incidentDateTimeFormatted = localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+if (_overwrite_default_reporting_period == "true") {
+    if (report_month != 0) {
+        localDateTime = localDateTime.withMonth(report_month);
+    }
+    if (report_year != 0) {
+        localDateTime = localDateTime.withYear(report_year);
+    }
+}
 
-logger.debug("From:${localDateTimeStart} To:${localDateTimeEnd}")
+def LocalDate localDate = localDateTime.toLocalDate();
+def LocalDate localDateLastDayOfMonth = localDate.with(TemporalAdjusters.lastDayOfMonth());
+def Timestamp nowTimestamp = Timestamp.valueOf(localDateTime);
 
-if (localDate == localDateLastDayOfMonth || _testing == true) {
+def LocalDateTime localDateTimeStart = localDateTime.with(TemporalAdjusters.firstDayOfMonth()).withHour(0).withMinute(0).withSecond(0).withNano(0);
 
+def LocalDateTime localDateTimeEnd = localDateTime.with(TemporalAdjusters.lastDayOfMonth()).withHour(23).withMinute(59).withSecond(58).withNano(999999999);
+
+def String batch = "${localDateTime.month}${localDateTime.year}";
+
+_reportingPeriod = "${localDateTimeStart} : ${localDateTimeEnd}".toString();
+_lastDayOfMonth = "lastDayOfTheMonth:${localDate == localDateLastDayOfMonth} - ${localDateLastDayOfMonth}".toString();
+logger.debug("reporting period: ${_reportingPeriod}");
+def String interfaceName = "NIBRS_GroupAIncident";
+
+if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
+    def DateTimeFormatter yearMonthFomatter = DateTimeFormatter.ofPattern("yyyy-MM");
+    def DateTimeFormatter yearMonthDayFomatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     String reportType = "GroupBArrestReport";
     String rootPath = "\\\\edc-isilon-smb\\ags2docsuat\\NIBRS";
     LocalDate reportDate = LocalDate.now();
     String reportFileNamePrefix = "EAttorney_${reportType}_${reportDate.getMonth()}_${reportDate.getDayOfMonth()}_${reportDate.getYear()}_".toString();
-    String reportFileNameSuffix;
-// when testing, set extensionto txt, outlook may prevent opening xml file
-    if (internalTesting == "true") {
-        reportFileNameSuffix = ".xml.txt";
-    } else {
-        reportFileNameSuffix = ".xml";
-    }
+    String reportFileNameSuffix = ".xml";
     File rootDir = new File(rootPath);
-
-    //TODO review interfaceTracking
-//// Interface tracking
-//    CtInterfaceTracking interfaceTracking = new CtInterfaceTracking();
-//    interfaceTracking.executionDate = Timestamp.valueOf(localDateTime);
-//    interfaceTracking.interfaceName = "NIBRSGAIR";
-//    interfaceTracking.result = "";
-//    interfaceTracking.saveOrUpdate();
-//    logger.debug("interfaceTracking: ${interfaceTracking.interfaceName}; ${interfaceTracking.executionDate}");
 
 //TODO review if this is required
 //Path reportPath = Files.createTempFile(rootDir.toPath(), reportFileNamePrefix, reportFileNameSuffix);
@@ -86,8 +95,10 @@ if (localDate == localDateLastDayOfMonth || _testing == true) {
 
 //ORI number must match this pattern [A-Z]{2}+[0-9]{7}+
     String oriPattern = "[A-Z]{2}+[0-9]{7}+";
-    String submittingAgencyORINumber = "AB1234567";
-    String owningAgencyORINumber = "AC1234567";
+    String submittingAgencyORINumber = SystemProperty.getValue("nibrs.ori.agency.submitting")?.matches(oriPattern) ? SystemProperty.getValue("nibrs.ori.agency.submitting") : "MS090017V";
+    //default test value
+    String owningAgencyORINumber = SystemProperty.getValue("nibrs.ori.agency.owning")?.matches(oriPattern) ? SystemProperty.getValue("nibrs.ori.agency.owning") : "MS090017V";
+
     logger.debug("submittingAgencyORINumber:${submittingAgencyORINumber}, owningAgencyORINumber:${owningAgencyORINumber}");
     String reportActionCategoryCode = "A";
     String incidentNumber = "TEST";
@@ -99,9 +110,6 @@ if (localDate == localDateLastDayOfMonth || _testing == true) {
 
     def ArrayList<String> offenseUCRCodeGroupB = Arrays.asList("FAILURE_TO_APPEAR,CURFEW-LOITERING-VAGRANCY_VIOLATIONS,DISORDERLY_CONDUCT,DRIVING_UNDER_INFLUENCE,FAMILY_OFFENSES-NONVIOLENT,FEDERAL_RESOURCE_VIOLATIONS,LIQUOR_LAW_VIOLATIONS,PERJURY,TRESPASSING,ALL_OTHER_OFFENSES".split(","));
 
-    offenseUCRCodeGroupB.each({String it -> logger.debug("Group B UCR: ${it}")});
-
-    logger.debug("charge attribute: " + Charge.get(521L).chargeAttributes)
 
 // Option selectec by user
     ArrayList<String> judicialDistrictCode = DomainObject.find(LookupItem.class, "lookupList.name", "JUDICIAL_DISTRICT_CODE").code;
@@ -115,42 +123,40 @@ if (localDate == localDateLastDayOfMonth || _testing == true) {
 
     int maxAgeRange = 50; //default value
     int minAgeRange = 20; //default value
-logger.debug("TEST:1");
 
 // Charges to submit
     def Where whereCharge = new Where();
     whereCharge.addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart));
     whereCharge.addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd));
-    whereCharge.addIsNotNull("chargeAttributes");
+    //whereCharge.addIsNotNull("chargeAttributes");
     whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupB);
-// arrest report requires known sex code, M or F
-    //whereCharge.addContainsAny("associatedParty.person.profiles.gender", ["M", "F"]);
-
 
     if (_cse != null) {
         whereCharge.addEquals("associatedParty.case", _cse);
     }
     ArrayList<Charge> offenses = DomainObject.find(Charge.class, whereCharge);
 
-    logger.debug("TEST:2");
+
     offenses = offenses.unique({ it -> getOffenseUCRCode(it) });
-    logger.debug("TEST:21");
-    ArrayList<String> toEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddress?.split(",")));logger.debug("TEST:22");
-    ArrayList<String> ccEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddressCC?.split(",")));logger.debug("TEST:23");
-    ArrayList<String> bccEmails = new ArrayList<>();logger.debug("TEST:24");
-    logger.debug("TEST:3");
+
+    ArrayList<String> toEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddress?.split(",")));
+
+    ArrayList<String> ccEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddressCC?.split(",")));
+
+    ArrayList<String> bccEmails = new ArrayList<>();
+
 // For test submissions, e-mail subject must say Test Data
     String emailSubject = "Test Data : ${reportType}";
     String emailBody = "${reportType} generated on: ${localDate}";
     Attachments attachments;
     File[] attachmentFiles;
-    logger.debug("TEST:4 offenses:${offenses.size()}");
-    if (offenses.isEmpty()) {
-        throw new Exception("Offenses failed validation; empty");
-    }
 
     logger.debug("Loop offenses: ${offenses.size()}")
     for (def Charge offense in offenses) {
+        def Case cse = offense.associatedParty.case;
+        def String caseCountry = cse.county ?: "";
+        String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCountry]).getValue("judicialDistrict") ?: "";
+        def Document reportDoc;
         Party subject = offense.associatedParty;
         OtherCaseNumber agencyNumber = subject.case.collect("otherCaseNumbers[type == 'AGENCY' && number != null]").find({ it -> it != null });
         String identificationID = agencyNumber != null && agencyNumber.number != null ? agencyNumber.number : "1234";
@@ -248,7 +254,6 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
             fileWriter.println("<j:ArrestSequenceID>1</j:ArrestSequenceID>");
             //<!-- Element 46, Arrestee Was Armed With -->
             fileWriter.println("<j:ArresteeArmedWithCode>${offense.cf_armedWithCode != null ? offense.cf_armedWithCode : arresteeArmedWithCode[0]}</j:ArresteeArmedWithCode>");
-            logger.debug("OPTION:<j:ArresteeArmedWithCode>${offense.cf_armedWithCode != null ? offense.cf_armedWithCode : arresteeArmedWithCode[0]}");
             //<!-- Element 52, Disposition of Arrestee Under 18 -->
             //<!--<j:ArresteeJuvenileDispositionCode>H</j:ArresteeJuvenileDispositionCode>-->
             fileWriter.println("</j:Arrestee>");
@@ -263,11 +268,10 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
             fileWriter.println("</nc:ActivityDate>");
             //<!-- Element 45, UCR Arrest Offense Code -->
             fileWriter.println("<j:ArrestCharge>");
-            fileWriter.println("<nibrs:ChargeUCRCode>${offenseUCRCode}</nibrs:ChargeUCRCode>");
+            fileWriter.println("<nibrs:ChargeUCRCode>${offense.statute.sectionCode}</nibrs:ChargeUCRCode>");
             fileWriter.println("</j:ArrestCharge>");
             //<!-- Element 43, Type Of Arrest -->
             fileWriter.println("<j:ArrestCategoryCode>${offense.cf_arrestCategoryCode != null ? offense.cf_arrestCategoryCode : arrestCategoryCode[0]}</j:ArrestCategoryCode>");
-            logger.debug("OPTION:<j:ArrestCategoryCode>${offense.cf_arrestCategoryCode != null ? offense.cf_arrestCategoryCode : arrestCategoryCode[0]}");
             fileWriter.println("</j:Arrest>");
             //<!-- Associations ==================================== -->
             fileWriter.println("<j:ArrestSubjectAssociation>");
@@ -280,9 +284,14 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
 
             fileWriter.flush();
             fileWriter.close();
-            attachmentFiles = new ArrayList<>(Arrays.asList(reportFile)).toArray(File[]);
-            attachments = new Attachments(attachmentFiles);
-            mailManager.sendMailToAll(["jcamarena@journaltech.com"], ccEmails, bccEmails, emailSubject, emailBody, attachments);
+
+            reportDoc = createDocument(reportFile, cse, offenses, batch, caseJudicialDistrictCode);
+            addDocumentToDocuments(cse, reportDoc);
+
+//            attachmentFiles = new ArrayList<>(Arrays.asList(reportFile)).toArray(File[]);
+//            attachments = new Attachments(attachmentFiles);
+//            mailManager.sendMailToAll(["jcamarena@journaltech.com"], ccEmails, bccEmails, emailSubject, emailBody, attachments);
+
             _fileOut = reportFile;
             Files.deleteIfExists(reportPath);
         } catch (Exception ex) {
@@ -290,6 +299,25 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
         }
     }
 
+}
+
+protected Document createDocument(File fileAttachment, Case cse, List<Charge> charges, String batch, String caseJudicialDistrictCode) {
+    Document reportDocument = new Document();
+    reportDocument.case = cse;
+    reportDocument.docDef = DomainObject.find(DocDef.class, "shortName", "NIBRSA").find({ it -> it != null });
+    reportDocument.memo = charges.id.join("_");
+    reportDocument.reviewStatus = "PRIVILEGED";
+    reportDocument.batchSource = "NIBRSA";
+    reportDocument.batch = batch;
+    reportDocument.filedByText = caseJudicialDistrictCode;
+    reportDocument.saveOrUpdate();
+    reportDocument.store(fileAttachment);
+    return reportDocument;
+}
+
+protected void addDocumentToDocuments(Case cse, Document document) {
+    cse.add(document, "documents");
+    cse.saveOrUpdate();
 }
 
 protected String getOffenseUCRCode(Charge offense) {
