@@ -86,10 +86,10 @@ offensesMap.put("39D", "SPORTS_TAMPERING");//tested grouped
 offensesMap.put("520", "WEAPON_LAW_VIOLATIONS");//tested grouped
 //Group B
 offensesMap.put("90C", "DISORDERLY_CONDUCT");//tested grouped
-offensesMap.put("90D", "DRIVING_UNDER_INFLUECE");//tested grouped
+offensesMap.put("90D", "DRIVING_UNDER_INFLUENCE");//tested grouped
 offensesMap.put("90F", "FAMILY_OFFENSES-NONVIOLENT");//tested grouped
 offensesMap.put("90G", "LIQUOR_LAW_VIOLATIONS");//tested grouped
-offensesMap.put("90J", "TRASPASSING");//tested grouped
+offensesMap.put("90J", "TRESPASSING");//tested grouped
 offensesMap.put("90Z", "ALL_OTHER_OFFENSES");//tested grouped
 
 
@@ -154,8 +154,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     logger.debug("charges:${charges}");
 
     for (Charge charge in charges) {
-        logger.debug("charge: ${charge} ${charge.statute.sectionCode}")
         def String offenseMappedValue = (String) offensesMap.get(charge.statute.sectionCode) ?: "";
+        logger.debug("charge: ${charge} ${charge.statute.sectionCode} offenseMappedValue:${offenseMappedValue}")
+
         if (!offenseMappedValue.isEmpty()) {
             HashSet<String> attributes = new HashSet<>();
             attributes.add(offenseMappedValue);

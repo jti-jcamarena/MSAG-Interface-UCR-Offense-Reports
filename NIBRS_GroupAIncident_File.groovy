@@ -12,7 +12,8 @@ def LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Chicago")
 def Where where = new Where()
         .addEquals("docDef.shortName", "NIBRSA")
         .addEquals("batch", "${_report_month}${_report_year}")
-        .addEquals("batchSource", "NIBRSA")
+        .addContainsAny("batchSource", ["NIBRSA", "NIBRSB"])
+//.addEquals("batchSource", "NIBRSA")
 //        .addEquals("filedByText", _jurisdiction);
 
 if (_jurisdiction) {

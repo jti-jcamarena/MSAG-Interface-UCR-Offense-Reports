@@ -22,7 +22,9 @@ import java.time.temporal.TemporalAdjusters;
 import com.sustain.cases.model.Charge;
 import com.sustain.cases.model.Party;
 import com.sustain.expression.Where;
-
+import com.sustain.document.model.Document;
+import com.sustain.document.model.DocDef;
+import com.sustain.lookuplist.model.LookupItem;
 
 //*All Group B offense UCR codes are invalid for MS NIBRS, this workflow/business rule is deactivated
 
@@ -30,14 +32,14 @@ import com.sustain.expression.Where;
 def Map offensesMap = new HashMap();
 //GROUP B OFFENSES
 //crimes against person, property, or society
-offensesMap.put("90Z", "ALL_OTHER_OFFENSES");//failed  The Enumeration constraint failed
+offensesMap.put("90Z", "ALL_OTHER_OFFENSES");//tested
 
 //crimes against society
 offensesMap.put("90C", "DISORDERLY_CONDUCT");//tested
-offensesMap.put("90D", "DRIVING_UNDER_INFLUENCE");//failed  The Enumeration constraint failed
-offensesMap.put("90F", "FAMILY_OFFENSES_NONVIOLENT");//failed  The Enumeration constraint failed
-offensesMap.put("90G", "LIQUOR_LAW_VIOLATIONS");//failed  The Enumeration constraint failed
-offensesMap.put("90J", "TRESPASSING");//failed  The Enumeration constraint failed
+offensesMap.put("90D", "DRIVING_UNDER_INFLUENCE");//tested
+offensesMap.put("90F", "FAMILY_OFFENSES_NONVIOLENT");//tested
+offensesMap.put("90G", "LIQUOR_LAW_VIOLATIONS");//tested
+offensesMap.put("90J", "TRESPASSING");//tested
 
 def String internalTesting = SystemProperty.getValue("nibrs.email.testing") ?: "true";
 def String ucrstatEmailAddress = SystemProperty.getValue("nibrs.email.inbox") ?: "";
@@ -47,7 +49,6 @@ def String ucrstatEmailAddressCC = SystemProperty.getValue("nibrs.email.inbox.cc
 def int report_year = _report_year == null ? 0 : Integer.parseInt(_report_year);
 def int report_month = _report_month == null ? 0 : Month.valueOf(_report_month).getValue();
 logger.debug("report year: ${report_year} report month: ${report_month}");
-
 
 //pst:America/Los_Angeles, cst:America/Chicago
 def LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Chicago")).withNano(0);
@@ -74,7 +75,6 @@ def String batch = "${localDateTime.month}${localDateTime.year}";
 _reportingPeriod = "${localDateTimeStart} : ${localDateTimeEnd}".toString();
 _lastDayOfMonth = "lastDayOfTheMonth:${localDate == localDateLastDayOfMonth} - ${localDateLastDayOfMonth}".toString();
 logger.debug("reporting period: ${_reportingPeriod}");
-def String interfaceName = "NIBRS_GroupAIncident";
 
 if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     def DateTimeFormatter yearMonthFomatter = DateTimeFormatter.ofPattern("yyyy-MM");
@@ -85,12 +85,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     String reportFileNamePrefix = "EAttorney_${reportType}_${reportDate.getMonth()}_${reportDate.getDayOfMonth()}_${reportDate.getYear()}_".toString();
     String reportFileNameSuffix = ".xml";
     File rootDir = new File(rootPath);
-
-//TODO review if this is required
-//Path reportPath = Files.createTempFile(rootDir.toPath(), reportFileNamePrefix, reportFileNameSuffix);
-//File reportFile = reportPath.toFile();
-//PrintWriter fileWriter = new PrintWriter(reportFile);
-
     String messageIdentifier = "TEST";
 
 //ORI number must match this pattern [A-Z]{2}+[0-9]{7}+
@@ -101,18 +95,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
     logger.debug("submittingAgencyORINumber:${submittingAgencyORINumber}, owningAgencyORINumber:${owningAgencyORINumber}");
     String reportActionCategoryCode = "A";
-    String incidentNumber = "TEST";
-    LocalDateTime incidentDateTime = localDateTime;
-    boolean incidentReportDateIndicator = false;
-    ArrayList<String> incidentExceptionalClearanceCode = Arrays.asList("A", "B", "C", "D", "E", "N");
-//TEST required when incidentExceptionalClearanceCode == A - E
-    LocalDate incidentExceptionalClearanceDate = LocalDate.now();
+    def ArrayList<String> offenseUCRCodeGroupB = offensesMap.values();
 
-    def ArrayList<String> offenseUCRCodeGroupB = Arrays.asList("FAILURE_TO_APPEAR,CURFEW-LOITERING-VAGRANCY_VIOLATIONS,DISORDERLY_CONDUCT,DRIVING_UNDER_INFLUENCE,FAMILY_OFFENSES-NONVIOLENT,FEDERAL_RESOURCE_VIOLATIONS,LIQUOR_LAW_VIOLATIONS,PERJURY,TRESPASSING,ALL_OTHER_OFFENSES".split(","));
-
-
-// Option selectec by user
-    ArrayList<String> judicialDistrictCode = DomainObject.find(LookupItem.class, "lookupList.name", "JUDICIAL_DISTRICT_CODE").code;
 // Option selectec by user
     ArrayList<String> arresteeArmedWithCode = DomainObject.find(LookupItem.class, "lookupList.name", "ARRESTEE_ARMED_WITH_CODE").code;
 // Option selectec by user
@@ -125,33 +109,24 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     int minAgeRange = 20; //default value
 
 // Charges to submit
-    def Where whereCharge = new Where();
-    whereCharge.addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart));
-    whereCharge.addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd));
-    //whereCharge.addIsNotNull("chargeAttributes");
-    whereCharge.addContainsAny("chargeAttributes", offenseUCRCodeGroupB);
+    def Where whereCharge = new Where()
+            .addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart))
+            .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
+            .addIsNotNull("chargeAttributes")
+            .addContainsAny("chargeAttributes", offenseUCRCodeGroupB)
 
     if (_cse != null) {
         whereCharge.addEquals("associatedParty.case", _cse);
     }
-    ArrayList<Charge> offenses = DomainObject.find(Charge.class, whereCharge);
+
+    ArrayList<Charge> offenses = DomainObject.find(Charge.class, whereCharge)
+    .findAll({Charge it -> (it.updateReason == null || it.updateReason.isEmpty() || it.updateReason != "NIBRS")});
+    ArrayList<Charge> charesToUpdate = new ArrayList<>();
 
 
     offenses = offenses.unique({ it -> getOffenseUCRCode(it) });
+    logger.debug("Loop offenses: ${offenses}");
 
-    ArrayList<String> toEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddress?.split(",")));
-
-    ArrayList<String> ccEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddressCC?.split(",")));
-
-    ArrayList<String> bccEmails = new ArrayList<>();
-
-// For test submissions, e-mail subject must say Test Data
-    String emailSubject = "Test Data : ${reportType}";
-    String emailBody = "${reportType} generated on: ${localDate}";
-    Attachments attachments;
-    File[] attachmentFiles;
-
-    logger.debug("Loop offenses: ${offenses.size()}")
     for (def Charge offense in offenses) {
         def Case cse = offense.associatedParty.case;
         def String caseCountry = cse.county ?: "";
@@ -287,18 +262,19 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
 
             reportDoc = createDocument(reportFile, cse, offenses, batch, caseJudicialDistrictCode);
             addDocumentToDocuments(cse, reportDoc);
-
-//            attachmentFiles = new ArrayList<>(Arrays.asList(reportFile)).toArray(File[]);
-//            attachments = new Attachments(attachmentFiles);
-//            mailManager.sendMailToAll(["jcamarena@journaltech.com"], ccEmails, bccEmails, emailSubject, emailBody, attachments);
-
+            offense.setUpdateReason("NIBRS");
+            charesToUpdate.add(offense);
             _fileOut = reportFile;
             Files.deleteIfExists(reportPath);
         } catch (Exception ex) {
             logger.debug("ex: ${ex.getMessage()}");
+        } finally {
+            logger.debug("finally")
+
         }
     }
-
+    logger.debug("saving charges ${charesToUpdate.size()}")
+    DomainObject.saveOrUpdateAll(charesToUpdate);
 }
 
 protected Document createDocument(File fileAttachment, Case cse, List<Charge> charges, String batch, String caseJudicialDistrictCode) {
@@ -307,7 +283,7 @@ protected Document createDocument(File fileAttachment, Case cse, List<Charge> ch
     reportDocument.docDef = DomainObject.find(DocDef.class, "shortName", "NIBRSA").find({ it -> it != null });
     reportDocument.memo = charges.id.join("_");
     reportDocument.reviewStatus = "PRIVILEGED";
-    reportDocument.batchSource = "NIBRSA";
+    reportDocument.batchSource = "NIBRSB";
     reportDocument.batch = batch;
     reportDocument.filedByText = caseJudicialDistrictCode;
     reportDocument.saveOrUpdate();
