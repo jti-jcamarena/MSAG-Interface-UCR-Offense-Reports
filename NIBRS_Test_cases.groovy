@@ -75,3 +75,7 @@ DomainObject.saveOrUpdateAll(chargesToUpdate);
 //DomainObject.find(Statute.class, where).unique({Statute it -> it.sectionCode}).sort({ Statute a, Statute b -> a.sectionCode <=> b.sectionCode })
 //        .each ({Statute it -> logger.debug(it.sectionCode)});
 
+//$DomainObject.findUnique($metadataTool.entityClass("RuleDef"),"code","ADD_DA_DIVISION")
+// .exec(null,{"caseType": $screen.get('caseType')}).getOutputValue("teamCode")
+
+//$DomainObject.findUnique($metadataTool.entityClass("RuleDef"),"code","IBRS_GetStatuteCode").exec(null,{"caseType": $screen.get('chargeAttributes')}).getOutputValue("ucr")

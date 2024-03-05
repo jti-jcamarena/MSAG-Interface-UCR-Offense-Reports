@@ -213,7 +213,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
 
     for (Party subject in subjects) {
-        ArrayList<Charge> subjectUcrOffenses = DomainObject.find(Charge.class, "associatedParty", subject, whereCharge2).findAll({ Charge it -> personUCROffenses.contains(getOffenseUCRCode(it)) || propertyUCROffenses.contains(getOffenseUCRCode(it)) });
+        ArrayList<Charge> subjectUcrOffenses = DomainObject.find(Charge.class, "associatedParty", subject, whereCharge2).findAll({ Charge it -> (it.updateReason == null || it.updateReason.isEmpty() || it.updateReason != "NIBRS") && (personUCROffenses.contains(getOffenseUCRCode(it)) || propertyUCROffenses.contains(getOffenseUCRCode(it))) });
         Charge firstChargeToXref = subjectUcrOffenses.sort({ Charge it -> it.chargeNumber }).find({ Charge it -> it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id == it.id }) != null || it.id != null });
         ArrayList<Charge> chargesToXref = subjectUcrOffenses.findAll({ Charge it -> it != firstChargeToXref });
         for (Charge charge in chargesToXref) {
