@@ -137,7 +137,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     Where whereCharge = new Where()
             .addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart))
             .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
-            .addIsNull("associatedParty.mFCU_ASR_Results")
+            //.addIsNull("associatedParty.mFCU_ASR_Results")
     //.addIsNull("chargeAttributes")
     //.addIsNotNull("statute.sectionCode")
     //.addContainsAny("statute.sectionCode", offensesMap.values())
@@ -204,7 +204,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart))
             .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
             .addIsNotNull("chargeAttributes")
-            .addIsNull("associatedParty.mFCU_ASR_Results")
+            //.addIsNull("associatedParty.mFCU_ASR_Results")
     //.addEquals("associatedParty", Party.get(32524L))
 
     def ArrayList<Charge> ucrCharges = DomainObject.find(Charge.class, whereCharge2);

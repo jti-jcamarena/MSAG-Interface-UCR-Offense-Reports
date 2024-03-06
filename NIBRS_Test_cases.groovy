@@ -6,6 +6,7 @@ import com.sustain.cases.model.Statute
 import com.sustain.cases.model.Charge
 import com.sustain.util.RichList;
 import com.sustain.entities.custom.MFCU_ASR_Result;
+import com.sustain.document.model.Document
 
 /*
 def Where where = new Where()
@@ -54,15 +55,19 @@ for (Charge charge in secondParty.collect("charges")){
 DomainObject.saveOrUpdateAll(chargesToSave);
 DomainObject.saveOrUpdate(secondParty);
 */
+def ArrayList<Document> documents = DomainObject.find(Document.class, "docDef.shortName", "NIBRSA", "case.id", 20490L);
+//logger.debug("documents case:${documents.case}");
+DomainObject.deleteAll(documents, true);
 
-//DomainObject.deleteAll(DomainObject.find(Document.class, "case.id", 20490L, "case.caseNumber", "23-44"), true);
-DomainObject.deleteAll(DomainObject.find(Document.class, "docDef.shortName", "NIBRSA"), true);
 
+def ArrayList<Charge> charges = DomainObject.find(Charge.class, "updateReason", "NIBRS", "associatedParty.case.id", 20490L);
+logger.debug("charges case: ${charges.associatedParty.case}")
 ArrayList<Charge> chargesToUpdate = new ArrayList<>();
-DomainObject.find(Charge.class, "updateReason", "NIBRS").each {Charge it ->
+charges.each {Charge it ->
     it.updateReason = "";
     chargesToUpdate.add(it);
 }
+
 DomainObject.saveOrUpdateAll(chargesToUpdate);
 
 //logger.debug(DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", 20490L, "person.id", 35291L).size());

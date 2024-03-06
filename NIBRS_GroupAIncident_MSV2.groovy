@@ -258,7 +258,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
             .addIsNotNull("chargeAttributes")
             .addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
-            .addIsNull("associatedParty.mFCU_ASR_Results")
+            //.addIsNull("associatedParty.mFCU_ASR_Results")
     //.addNotEquals("updateReason", "NIBRS")
     //.addIsNotNull("statute.sectionCode")
     //.addContainsAny("statute.sectionCode", offensesMap.values())
@@ -326,7 +326,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         relatedCharges = getRelatedChargesLimit10(relatedCharges);
 
 //        for (def Party victim in offenseVictims) {
-        Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_x${relatedCharges.size()}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
+        Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_${offense.associatedParty.id}_x${relatedCharges.size()}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
         File reportFile = reportPath.toFile();
         PrintWriter fileWriter = new PrintWriter(reportFile);
         HashSet<Party> offenseSubjects = new HashSet(getOffenseSubjects(offense));

@@ -137,7 +137,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         String identificationID = agencyNumber != null && agencyNumber.number != null ? agencyNumber.number : "1234";
         String offenseUCRCode = getOffenseUCRCode(offense);
 
-        Path reportPath = Files.createTempFile(rootDir.toPath(), "${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
+        Path reportPath = Files.createTempFile(rootDir.toPath(), "${cse.id}_${offense.id}_${offense.associatedParty.id}_${reportFileNamePrefix}_${offenseUCRCode}_".toString(), reportFileNameSuffix);
         File reportFile = reportPath.toFile();
         PrintWriter fileWriter = new PrintWriter(reportFile);
 
