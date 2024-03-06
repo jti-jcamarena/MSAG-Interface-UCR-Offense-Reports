@@ -228,7 +228,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
 
 // The following UCR Codes requires the property entity
-    ArrayList<String> offenseUCRCodeRequiresProperty = new ArrayList<>(Arrays.asList("ARSON,BAD_CHECKS,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,IDENTITY_THEFT,IMPORT_VIOLATIONS,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,WEAPONS_OF_MASS_DESTRUCTION".split(",")));
+    ArrayList<String> offenseUCRCodeRequiresProperty = new ArrayList<>(Arrays.asList("ARSON,BAD_CHECKS,BETTING-WAGERING,BRIBERY,BURGLARY-BREAKING_ENTERING,COUNTERFEIT-FORGERY,DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY,DRUG-EQUIPMENT_VIOLATIONS,DRUG-NARCOTIC_VIOLATIONS,EMBEZZLEMENT,EXPLOSIVES,EXPORT_VIOLATIONS,EXTORTION-BLACKMAIL,FEDERAL_LIQUOR_OFFENSES,FEDERAL_TOBACCO_OFFENSES,FIREARM_ACT_VIOLATION,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,GAMBLING-EQUIPMENT_VIOLATION,GAMBLING-OPERATING_PROMOTING_ASSISTING,HACKING-COMPUTER_INVASION,IDENTITY_THEFT,IMPORT_VIOLATIONS,KIDNAPPING-ABDUCTION,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING,SPORTS_TAMPERING,STOLEN_PROPERTY_OFFENSES,WEAPONS_OF_MASS_DESTRUCTION".split(",")));
 
 // When Weapon/Force Involved, one of the following URC codes is required
     ArrayList<String> offenseUCRCodeRequiredWhenForceCategoryPresent = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT,ASSAULT-SIMPLE,EXPLOSIVES,EXTORTION-BLACKMAIL,FIREARM_ACT_VIOLATION,FONDLING,HUMAN_TRAFFICKING-COMMERCIAL_SEX_ACTS,HUMAN_TRAFFICKING-INVOLUNTARY_SERVITUDE,JUSTIFIABLE_HOMICIDE,KIDNAPPING-ABDUCTION,MANSLAUGHTER_NEGLIGENT,MANSLAUGHTER_NONNEGLIGENT-MURDER,RAPE,ROBBERY,SEX_ASSAULT-OBJECT,SODOMY,WEAPON_LAW_VIOLATIONS,WEAPONS_OF_MASS_DESTRUCTION".split(",")));
@@ -258,12 +258,12 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
             .addIsNotNull("chargeAttributes")
             .addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
-            //.addIsNull("associatedParty.mFCU_ASR_Results")
+    //.addIsNull("associatedParty.mFCU_ASR_Results")
     //.addNotEquals("updateReason", "NIBRS")
     //.addIsNotNull("statute.sectionCode")
     //.addContainsAny("statute.sectionCode", offensesMap.values())
 
-    //.addEquals("associatedParty", Party.get(32524L))
+            //.addEquals("associatedParty", Party.get(33007L))
 
     //.addEquals("id", 764L)
 
@@ -278,7 +278,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .findAll({ Charge it ->
                 (it.updateReason == null || it.updateReason.isEmpty() || it.updateReason != "NIBRS") &&
                         (it.collect("xrefs[entityType=='Charge' and refType=='REL'].ref").isEmpty() ||
-                        it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id == it.id }) != null)
+                                it.associatedParty.case.collect("crossReferences[lentity.toString() == 'com.sustain.cases.model.Charge' && rentity.toString() == 'com.sustain.cases.model.Charge'].lid").find({ id -> id == it.id }) != null)
             });
 
     logger.debug("Cases: ${offenses.associatedParty.case.unique({ it -> it.id })}");
