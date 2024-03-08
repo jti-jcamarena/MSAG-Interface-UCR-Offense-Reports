@@ -1,5 +1,6 @@
 import com.sustain.DomainObject;
-import com.sustain.cases.model.Case;
+import com.sustain.cases.model.Case
+import com.sustain.cases.model.CaseCrossReference;
 import com.sustain.cases.model.Party;
 import com.sustain.expression.Where;
 import com.sustain.cases.model.Statute
@@ -96,7 +97,7 @@ def Where where = new Where()
     logger.debug("items size:${items.size()}");
     logger.debug("items:${items.code}");
 
-//def Party partyToCharge = Party.get(33003L);
+//def Party partyToCharge = Party.get(33056L);
 //def Date chargeDate = new Date();
 //def String chargeStatus = "ACT";
 //def int chargeNumber = 1;
@@ -123,12 +124,15 @@ def Where where = new Where()
 
 
 def ArrayList<Document> documents = DomainObject.find(Document.class, "docDef.shortName", "NIBRSA", "case.id", 20490L);
-//logger.debug("documents case:${documents.case}");
+
 DomainObject.deleteAll(documents, true);
+
+def ArrayList<CaseCrossReference> crossReferences = DomainObject.find(CaseCrossReference.class, "associatedCase.id", 20490L);
+DomainObject.deleteAll(crossReferences, true);
 
 
 def ArrayList<Charge> charges = DomainObject.find(Charge.class, "updateReason", "NIBRS", "associatedParty.case.id", 20490L);
-logger.debug("charges case: ${charges.associatedParty.case}")
+
 ArrayList<Charge> chargesToUpdate = new ArrayList<>();
 charges.each {Charge it ->
     it.updateReason = "";
