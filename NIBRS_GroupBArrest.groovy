@@ -2,6 +2,7 @@ import com.sustain.DomainObject
 import com.sustain.cases.model.Case
 import com.sustain.document.model.Document
 import com.sustain.properties.model.SystemProperty
+import com.sustain.util.StringUtils
 
 import java.nio.file.Files;
 import java.time.LocalDate;
@@ -130,7 +131,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     for (def Charge offense in offenses) {
         def Case cse = offense.associatedParty.case;
         def String caseCountry = cse.county ?: "";
-        String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCountry]).getValue("judicialDistrict") ?: "";
+        def String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCountry]).getValue("judicialDistrict") ?: "";
+        def String uuid = StringUtils.uuid();
         def Document reportDoc;
         Party subject = offense.associatedParty;
         OtherCaseNumber agencyNumber = subject.case.collect("otherCaseNumbers[type == 'AGENCY' && number != null]").find({ it -> it != null });
@@ -201,7 +203,7 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
             fileWriter.println("</nibrs:ReportingAgency>");
             fileWriter.println("</nibrs:ReportHeader>");
 
-            fileWriter.println("<nc:Person s:id='" + "PersonArrestee${subject.id}" + "'>");
+            fileWriter.println("<nc:Person s:id='" + "PersonArrestee${subject.id}_${uuid}" + "'>");
             //<!-- Element 26, Age of Victim (only one would be included per victim)-->
             fileWriter.println("<nc:PersonAgeMeasure>");
             if (getAge(subject) != null) {
@@ -223,16 +225,16 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
             fileWriter.println("<j:PersonSexCode>${getGenderCode(subject)}</j:PersonSexCode>");
             fileWriter.println("</nc:Person>");
 
-            fileWriter.println("<j:Arrestee s:id='" + "Arrestee1" + "'>");
-            fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonArrestee${subject.id}" + "'/>");
+            fileWriter.println("<j:Arrestee s:id='" + "Arrestee1_${uuid}" + "'>");
+            fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonArrestee${subject.id}_${uuid}" + "'/>");
             //<!-- Element 40, Arrestee Sequence Number -->
-            fileWriter.println("<j:ArrestSequenceID>1</j:ArrestSequenceID>");
+            fileWriter.println("<j:ArrestSequenceID>${offenses.indexOf(offense) + 1}</j:ArrestSequenceID>");
             //<!-- Element 46, Arrestee Was Armed With -->
             fileWriter.println("<j:ArresteeArmedWithCode>${offense.cf_armedWithCode != null ? offense.cf_armedWithCode : arresteeArmedWithCode[0]}</j:ArresteeArmedWithCode>");
             //<!-- Element 52, Disposition of Arrestee Under 18 -->
             //<!--<j:ArresteeJuvenileDispositionCode>H</j:ArresteeJuvenileDispositionCode>-->
             fileWriter.println("</j:Arrestee>");
-            fileWriter.println("<j:Arrest s:id='" + "Arrest1" + "'>");
+            fileWriter.println("<j:Arrest s:id='" + "Arrest1_${uuid}" + "'>");
             //<!-- Element 41, Arrest Transaction Number -->
             fileWriter.println("<nc:ActivityIdentification>");
             fileWriter.println("<nc:IdentificationID>${identificationID}</nc:IdentificationID>");
@@ -250,8 +252,8 @@ xsi:schemaLocation="http://www.beyond2020.com/msibrs/1.0 ../base-xsd/msibrs/1.0/
             fileWriter.println("</j:Arrest>");
             //<!-- Associations ==================================== -->
             fileWriter.println("<j:ArrestSubjectAssociation>");
-            fileWriter.println("<nc:Activity s:ref='" + "Arrest1" + "'/>");
-            fileWriter.println("<j:Subject s:ref='" + "Arrestee1" + "'/>");
+            fileWriter.println("<nc:Activity s:ref='" + "Arrest1_${uuid}" + "'/>");
+            fileWriter.println("<j:Subject s:ref='" + "Arrestee1_${uuid}" + "'/>");
             fileWriter.println("</j:ArrestSubjectAssociation>");
 
             fileWriter.println("</nibrs:Report>");
