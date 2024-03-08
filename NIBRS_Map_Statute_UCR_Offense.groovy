@@ -137,19 +137,14 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     Where whereCharge = new Where()
             .addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart))
             .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
-            //.addIsNull("associatedParty.mFCU_ASR_Results")
-    //.addIsNull("chargeAttributes")
-    //.addIsNotNull("statute.sectionCode")
-    //.addContainsAny("statute.sectionCode", offensesMap.values())
-    //.addEquals("associatedParty", Party.get(32524L))
+            .addIsNull("chargeAttributes")
 
     def Where where = new Where()
             .addEquals("lookupList.name", "CHARGE_ATTRIBUTES")
             .addIsNull("activeTo");
 
     def ArrayList<Charge> charges = DomainObject.find(Charge.class, whereCharge);
-//    def ArrayList<LookupItem> items = DomainObject.find(LookupItem.class, where);
-//    logger.debug("items:${items.code}");
+            //.findAll({ Charge it -> (it.updateReason == null || it.updateReason.isEmpty() || it.updateReason != "NIBRS") });
     def ArrayList<Charge> chargesToUpdate = new ArrayList<>();
     logger.debug("charges:${charges}");
 
@@ -167,32 +162,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             charge.setChargeAttributes(attributes);
             chargesToUpdate.add(charge);
         }
-//        def String sectionName = charge.statute.sectionName;
-//        def List<String> sectionNameTokenized = sectionName.replaceAll("\\W", " ").toUpperCase().tokenize().unique({ it -> it });
-//        def String ucrOffense = "";
-//
-
-//    if (!charge.getChargeAttributes().isEmpty()){
-//        charge.setChargeAttributes(new HashSet<>());
-//        chargesToUpdate.add(charge);
-//    }
-
-//        for (String code in items.code) {
-//            def ArrayList<String> codeTokenized = Arrays.asList(code.toUpperCase().split("[_-]").toUnique({ it -> it }));
-//            def ArrayList<String> codeTokenizedRetainAll = Arrays.asList(code.toUpperCase().split("[_-]").toUnique({ it -> it }));
-//            codeTokenizedRetainAll.retainAll(sectionNameTokenized);
-//
-//            if (codeTokenized.size() == codeTokenizedRetainAll.size() || codeTokenized.size() > 1 && codeTokenizedRetainAll.size() > 1) {
-////            logger.debug("retainall 1: ${sectionNameTokenized} ${codeTokenized}");
-//                HashSet<String> attributes = new HashSet<>();
-//                attributes.add(code);
-//                //logger.debug("sectionNameTokenized:${sectionNameTokenized}");
-////            logger.debug("codeTokenized:${codeTokenized}; sectionNameTokenized:${sectionNameTokenized}");
-//                charge.setChargeAttributes(attributes);
-//                chargesToUpdate.add(charge);
-//                break;
-//            }
-//        }
     }
 
     DomainObject.saveOrUpdateAll(chargesToUpdate);
@@ -204,8 +173,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart))
             .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
             .addIsNotNull("chargeAttributes")
-            //.addIsNull("associatedParty.mFCU_ASR_Results")
-    //.addEquals("associatedParty", Party.get(32524L))
 
     def ArrayList<Charge> ucrCharges = DomainObject.find(Charge.class, whereCharge2);
     def ArrayList<Party> subjects = ucrCharges.associatedParty.unique({ Party it -> it });
