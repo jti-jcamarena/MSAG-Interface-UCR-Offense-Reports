@@ -1,7 +1,9 @@
 import com.sustain.util.RichList;
 import com.sustain.properties.model.SystemProperty;
 import com.sustain.cases.model.Case;
-import com.sustain.document.model.Document;
+import com.sustain.document.model.Document
+import com.sustain.util.StringUtils;
+
 import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.time.LocalDate;
@@ -25,8 +27,6 @@ import com.sustain.expression.Where;
 import com.sustain.DomainObject;
 import com.sustain.cases.model.Party;
 import com.sustain.person.model.Person;
-
-// *lastUpdated:02/20/2024
 
 def Long defaultPersonId = 35291L;
 
@@ -258,14 +258,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             .addLessThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeEnd))
             .addIsNotNull("chargeAttributes")
             .addContainsAny("chargeAttributes", offenseUCRCodeGroupA)
-    //.addIsNull("associatedParty.mFCU_ASR_Results")
-    //.addNotEquals("updateReason", "NIBRS")
-    //.addIsNotNull("statute.sectionCode")
-    //.addContainsAny("statute.sectionCode", offensesMap.values())
-
-            //.addEquals("associatedParty", Party.get(33007L))
-
-    //.addEquals("id", 764L)
 
     if (_cse != null) {
         whereCharge.addEquals("associatedParty.case", _cse);
@@ -299,6 +291,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
     def ArrayList<Charge> processedRelatedOffenses = new ArrayList<>();
     for (def Charge offense in offenses) {
+        def String uuid = StringUtils.uuid();
         logger.debug("offense loop: ${offense}");
         processedRelatedOffenses.add(offense);
         Case cse = offense.associatedParty.case;
@@ -311,11 +304,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCounty]).getValue("judicialDistrict") ?: "";
 
         String offenseUCRCode = getOffenseUCRCode(offense);
-//        def ArrayList<Party> offenseVictims = getOffenseVictims(offense, victimFilterXrefChargeVictim);
         def ArrayList<Party> offenseVictims = getOffenseVictims(relatedCharges, victimFilterXrefChargeVictim);
-
-//        logger.debug("offense victims xref: " + offense.collect(victimFilterXrefChargeVictim));
-//        logger.debug("offense victims default: ${offenseVictims}");
 
         relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
         relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
@@ -414,15 +403,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             fileWriter.println("</j:IncidentAugmentation>");
             fileWriter.println("</nc:Incident>");
 
-////These filters prevent charges which are mutually exclusive from being reported in a incident report
-//            relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
-//            relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
-//            relatedCharges = getRelatedChargesLimitedBySimpleAssault(relatedCharges);
-//            relatedCharges = getRelatedChargesLimitedByIntimidation(relatedCharges);
-//            relatedCharges = getRelatedChargeLimitedByUniqueOffenseUCRCode(relatedCharges);
-//            relatedCharges = getRelatedChargesLimitedByRobbery(relatedCharges);
-//            relatedCharges = getRelatedChargesLimit10(relatedCharges);
-
             if (Collections.disjoint(getUCROffenses(relatedCharges), personAndPropertyUCROffenses) == false &&
                     Collections.disjoint(getUCROffenses(relatedCharges), societyUCROffenses) == false) {
                 relatedCharges = getRelatedChargesLimitedByExcludingListCharges(relatedCharges, societyUCROffenses);
@@ -433,7 +413,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 relatedOffense.setCf_judicialDistrictCode(caseJudicialDistrictCode);
 
 
-                fileWriter.println("<j:Offense s:id='" + "Offense${relatedOffense.id}" + "'>");
+                fileWriter.println("<j:Offense s:id='" + "Offense${relatedOffense.id}_${uuid}" + "'>");
                 //<!-- Element 6, Offense Code -->
                 String relatedOffenseUCRCode = getOffenseUCRCode(relatedOffense);
                 fileWriter.println("<nibrs:OffenseUCRCode>${offensesMap.get(relatedOffenseUCRCode)}</nibrs:OffenseUCRCode><!-- ${relatedOffenseUCRCode} -->");
@@ -481,7 +461,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             //loop through offenses for offense location
             //for (offense in offenses){
             //<!-- Element 9, Location Type -->
-            fileWriter.println("<nc:Location s:id='" + "Location${offense.id}" + "'>");
+            fileWriter.println("<nc:Location s:id='" + "Location${offense.id}_${uuid}" + "'>");
             fileWriter.println("<nibrs:LocationCategoryCode>${offense.cf_locationCategory != null ? offense.cf_locationCategory : locationCategoryCode}</nibrs:LocationCategoryCode>");
 //              fileWriter.println("<nc:LocationLocale>");
 //                    fileWriter.println("<cjis:JudicialDistrictCode>${caseJudicialDistrictCode != null ? caseJudicialDistrictCode : judicialDistrictCode[0]}</cjis:JudicialDistrictCode>");
@@ -498,7 +478,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                     //<!-- Element 14, Type Property Loss/etc  -->
 
                     //fileWriter.println("<nc:ItemStatus>");
-                    fileWriter.println("<nc:ItemStatus s:id='" + "ItemStatus${relatedOffense.id}" + "'>");
+                    fileWriter.println("<nc:ItemStatus s:id='" + "ItemStatus${relatedOffense.id}_${uuid}" + "'>");
                     fileWriter.println("<cjis:ItemStatusCode>${getItemStatus(relatedOffense)}</cjis:ItemStatusCode>");
                     fileWriter.println("</nc:ItemStatus>");
 
@@ -561,7 +541,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }));
 
                 def boolean isStatutoryRape = victimURCOffenses.contains("RAPE-STATUTORY") ?: false;
-                fileWriter.println("<nc:Person s:id='" + "PersonVictim${victim.id}" + "'>");
+                fileWriter.println("<nc:Person s:id='" + "PersonVictim${victim.id}_${uuid}" + "'>");
                 if (Collections.disjoint(victimCategoryCodeSocietyRequiredUCR, getUCROffenses(relatedCharges)) == true) {
                     //<!-- Element 26, Age of Victim (only one would be included per victim)-->
                     fileWriter.println("<nc:PersonAgeMeasure>");
@@ -589,7 +569,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
 
             for (def Party subject in offenseSubjects) {
-                fileWriter.println("<nc:Person s:id='" + "PersonSubject${subject.id}" + "'>");
+                fileWriter.println("<nc:Person s:id='" + "PersonSubject${subject.id}_${uuid}" + "'>");
 
 
                 //<!-- Element 37, Age of Subject (only one would be included per subject) -->
@@ -617,8 +597,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             for (victim in offenseVictims) {
                 def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }))
 //                logger.debug("victimURCOffenses:${victimURCOffenses}");
-                fileWriter.println("<j:Victim s:id='" + "Victim${victim.id}" + "'>");
-                fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}" + "'/>");
+                fileWriter.println("<j:Victim s:id='" + "Victim${victim.id}_${uuid}" + "'>");
+                fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}_${uuid}" + "'/>");
                 //<!-- Element 23, Victim Sequence Number -->
 //                fileWriter.println("<j:VictimSequenceNumberText>${offenseVictimsArrayList.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
                 fileWriter.println("<j:VictimSequenceNumberText>${offenseVictims.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
@@ -673,8 +653,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             }
 
             for (subject in offenseSubjects) {
-                fileWriter.println("<j:Subject s:id='" + "Subject${subject.id}" + "'>");
-                fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonSubject${subject.id}" + "'/>");
+                fileWriter.println("<j:Subject s:id='" + "Subject${subject.id}_${uuid}" + "'>");
+                fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonSubject${subject.id}_${uuid}" + "'/>");
                 //<!-- Element 36, Offender Sequence Number -->
                 fileWriter.println("<j:SubjectSequenceNumberText>${offenseSubjectsArrayList.indexOf(subject) + 1}</j:SubjectSequenceNumberText>");
                 fileWriter.println("</j:Subject>");
@@ -685,8 +665,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             //<!-- Offense Location Association -->
             for (relatedOffense in relatedCharges) {
                 fileWriter.println("<j:OffenseLocationAssociation>");
-                fileWriter.println("<j:Offense s:ref='" + "Offense${relatedOffense.id}" + "'/>");
-                fileWriter.println("<nc:Location s:ref='" + "Location${offense.id}" + "'/>");
+                fileWriter.println("<j:Offense s:ref='" + "Offense${relatedOffense.id}_${uuid}" + "'/>");
+                fileWriter.println("<nc:Location s:ref='" + "Location${offense.id}_${uuid}" + "'/>");
                 fileWriter.println("</j:OffenseLocationAssociation>");
             }
 
@@ -694,8 +674,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             for (def Charge relatedOffense in relatedCharges) {
                 for (def Party victim in relatedOffense.collect(victimFilterXrefChargeVictim)) {
                     fileWriter.println("<j:OffenseVictimAssociation>");
-                    fileWriter.println("<j:Offense s:ref='" + "Offense${relatedOffense.id}" + "'/>");
-                    fileWriter.println("<j:Victim s:ref='" + "Victim${victim.id}" + "'/>");
+                    fileWriter.println("<j:Offense s:ref='" + "Offense${relatedOffense.id}_${uuid}" + "'/>");
+                    fileWriter.println("<j:Victim s:ref='" + "Victim${victim.id}_${uuid}" + "'/>");
                     fileWriter.println("</j:OffenseVictimAssociation>");
                 }
             }
@@ -705,9 +685,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 for (def Party subject in offenseSubjects) {
                     for (victim in offenseVictims) {
                         def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }));
-                        fileWriter.println("<j:SubjectVictimAssociation s:id='" + "SubjectVictimAssocSP${subject.id}${victim.id}" + "'>");
-                        fileWriter.println("<j:Subject s:ref='" + "Subject${subject.id}" + "'/>");
-                        fileWriter.println("<j:Victim s:ref='" + "Victim${victim.id}" + "'/>");
+                        fileWriter.println("<j:SubjectVictimAssociation s:id='" + "SubjectVictimAssocSP${subject.id}${victim.id}_${uuid}" + "'>");
+                        fileWriter.println("<j:Subject s:ref='" + "Subject${subject.id}_${uuid}" + "'/>");
+                        fileWriter.println("<j:Victim s:ref='" + "Victim${victim.id}_${uuid}" + "'/>");
                         //<!-- Element 35, Relationship(s) of Victim To Offender -->
                         String victimToSubjectRelationshipCode = "Acquaintance";
                         if (Collections.disjoint(victimURCOffenses, ["INCEST"]) == false) {
