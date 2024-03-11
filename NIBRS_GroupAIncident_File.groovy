@@ -1,6 +1,7 @@
 import com.sustain.DomainObject;
 import com.sustain.document.model.Document;
-import com.sustain.expression.Where;
+import com.sustain.expression.Where
+import com.sustain.rule.RuleContextAccessor;
 import com.sustain.util.ZipUtil
 
 import java.nio.file.Files;
@@ -27,7 +28,10 @@ def ArrayList<Document> nibrsReportDocuments = DomainObject.find(Document.class,
 _outputMessage = "Month:${_report_month} Year:${_report_year} Jurisdiction:${_jurisdiction} reports:${nibrsReportDocuments.size()}";
 
 if (!nibrsReportDocuments.isEmpty()) {
+    def RuleContextAccessor ruleContextAccessor = com.sustain.rule.model.RuleDef.exec("NIBRS_AllReports", null, ["documents": nibrsReportDocuments])
+    def File allReportFile = ruleContextAccessor.getValue("outputFile");
     def ArrayList<File> reportFiles = nibrsReportDocuments.findAll({ Document document -> document.file != null }).file;
+    reportFiles.add(allReportFile);
     def String filePrefix = "${_report_month}${_report_year}_";
     def String fileSuffix = ".zip";
 
