@@ -157,10 +157,6 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             attributes.add(offenseMappedValue);
             charge.setChargeAttributes(attributes);
             chargesToUpdate.add(charge);
-        } else {
-            HashSet<String> attributes = new HashSet<>();
-            charge.setChargeAttributes(attributes);
-            chargesToUpdate.add(charge);
         }
     }
 
