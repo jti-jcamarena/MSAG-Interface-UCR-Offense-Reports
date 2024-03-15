@@ -106,13 +106,16 @@ def ArrayList<String> societyUCROffenses =
         Arrays.asList("BETTING-WAGERING,PROSTITUTION,WEAPON_LAW_VIOLATIONS,OBSCENE_MATERIAL-PORNOGRAPHY,GAMBLING-EQUIPMENT_VIOLATION,DRUG-NARCOTIC_VIOLATIONS,SPORTS_TAMPERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,DRUG-EQUIPMENT_VIOLATIONS,PROSTITUTION-ASSISTING_OR_PROMOTING,CRUELTY_TO_ANIMALS,PROSTITUTION-PURCHASING".split(","));
 
 
+/*
 ArrayList<String> offenseUCRCodeGroupA = new ArrayList();
 offenseUCRCodeGroupA.addAll(personUCROffenses);
 offenseUCRCodeGroupA.addAll(propertyUCROffenses);
 offenseUCRCodeGroupA.addAll(societyUCROffenses);
 
 def String internalTesting = SystemProperty.getValue("nibrs.email.testing") ?: "true";
+*/
 
+/*
 def int report_year = _report_year == null ? 0 : Integer.parseInt(_report_year);
 def int report_month = _report_month == null ? 0 : Month.valueOf(_report_month).getValue();
 def LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("America/Chicago")).withNano(0);
@@ -131,8 +134,9 @@ def LocalDate localDate = localDateTime.toLocalDate();
 def LocalDate localDateLastDayOfMonth = localDate.with(TemporalAdjusters.lastDayOfMonth());
 def LocalDateTime localDateTimeStart = localDateTime.with(TemporalAdjusters.firstDayOfMonth()).withHour(0).withMinute(0).withSecond(0).withNano(0);
 def LocalDateTime localDateTimeEnd = localDateTime.with(TemporalAdjusters.lastDayOfMonth()).withHour(23).withMinute(59).withSecond(58).withNano(999999999);
+*/
 
-if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
+/*if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
     Where whereCharge = new Where()
             .addGreaterThanOrEquals("chargeDate", Timestamp.valueOf(localDateTimeStart))
@@ -186,7 +190,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     }
 
     DomainObject.saveOrUpdateAll(chargesUpdateByXref);
-}
+}*/
 
 protected String getOffenseUCRCode(Charge offense) {
     String code = offense.collect("chargeAttributes").find({ it -> it != null });

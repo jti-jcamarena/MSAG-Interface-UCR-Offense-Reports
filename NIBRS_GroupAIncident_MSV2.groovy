@@ -28,7 +28,8 @@ import com.sustain.DomainObject;
 import com.sustain.cases.model.Party;
 import com.sustain.person.model.Person;
 
-def Long defaultPersonId = 35291L;
+def String defaultSocietyPerson = SystemProperty.getValue("nibrs.victim.default.society");
+def Long societyVictimID = Long.parseLong(defaultSocietyPerson);
 
 //Person offenses:
 def ArrayList<String> personUCROffenses =
@@ -304,7 +305,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
         String caseJudicialDistrictCode = com.sustain.rule.model.RuleDef.exec("NIBRS_DISTRICT", null, ["caseCounty": caseCounty]).getValue("judicialDistrict") ?: "";
 
         String offenseUCRCode = getOffenseUCRCode(offense);
-        def ArrayList<Party> offenseVictims = getOffenseVictims(relatedCharges, victimFilterXrefChargeVictim);
+        def ArrayList<Party> offenseVictims = getOffenseVictims(relatedCharges, victimFilterXrefChargeVictim, societyUCROffenses, societyVictimID);
 
         relatedCharges = getRelatedChargesLimitedByJustifiableHomicide(relatedCharges);
         relatedCharges = getRelatedChargesLimitedByAggravatedAssault(relatedCharges);
@@ -724,7 +725,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             logger.debug("finally:")
             !interfaceTracking.result?.isEmpty() ?: interfaceTracking.setResult("SUCCESS");
             DomainObject.saveOrUpdate(cse);
-            DomainObject.saveOrUpdateAll(processedRelatedOffenses);
+            //DomainObject.saveOrUpdateAll(processedRelatedOffenses);
             DomainObject.saveOrUpdate(interfaceTracking);
             DomainObject.saveOrUpdateAll(interfaceTrackingDetails);
         }
@@ -762,18 +763,19 @@ protected ArrayList<Party> getOffenseSubjects(Charge offense) {
     return ucrOffenseSubjects;
 }
 
-protected Party createOffenseVictim(Case cse) {
+protected Party createOffenseVictim(Case cse, Long societyVictim) {
     def Party offenseVictim = new Party()
     offenseVictim.setCase(cse);
     offenseVictim.setPartyType("VIC");
     offenseVictim.setStatus("ACTIVE")
-    offenseVictim.setPerson(Person.get(35291L));
+    offenseVictim.setPerson(Person.get(societyVictim));
     DomainObject.saveOrUpdate(offenseVictim);
     cse.add(offenseVictim, "parties");
     return offenseVictim;
 }
 
-protected ArrayList<Party> getOffenseVictims(ArrayList<Charge> offenses, String victimFilterXrefChargeVictim) {
+protected ArrayList<Party> getOffenseVictims(ArrayList<Charge> offenses, String victimFilterXrefChargeVictim, ArrayList<String> societyUCROffenses, Long societyVictimID) {
+
     def ArrayList<Party> ucrOffenseVictims = new ArrayList();
     for (Charge offense in offenses) {
         def Case cse = offense.associatedParty.case;
@@ -782,8 +784,8 @@ protected ArrayList<Party> getOffenseVictims(ArrayList<Charge> offenses, String 
         if (!ucrOffenseVictimsList.isEmpty()) {
             ucrOffenseVictims.addAll(ucrOffenseVictimsList);
         } else {
-            def Party defaultParty = DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", cse.id, "person.id", 35291L).find({ Party it -> it != null });
-            def Party offenseVictim = defaultParty != null ? defaultParty : createOffenseVictim(cse);
+            def Party defaultParty = DomainObject.find(Party.class, "partyType", "VIC", "status", "ACTIVE", "case.id", cse.id, "person.id", societyVictimID).find({ Party it -> it != null });
+            def Party offenseVictim = defaultParty != null ? defaultParty : createOffenseVictim(cse, societyVictimID);
             ucrOffenseVictims.add(offenseVictim);
             offense.addCrossReference(offenseVictim, "VICTIMOF")
         }
@@ -1054,9 +1056,8 @@ protected List<String> getUCROffenses(List<Charge> offenses) {
 }
 
 protected String getForceCategoryCode(Charge thisOffense) {
-    def String forceCategoryCode = thisOffense.cf_forceCategory != null ? thisOffense.cf_forceCategory : "99";
-
-// AGGRAVATED_ASSAULT when Weapon/Force is used, one of the following URC codes is required
+    def String forceCategoryCode = thisOffense.cf_forceCategory != null ? thisOffense.cf_forceCategory : "";
+/*// AGGRAVATED_ASSAULT when Weapon/Force is used, one of the following URC codes is required
     ArrayList<String> offenseUCRCodeRequiredWhenFireArmsWeapons = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT".split(",")));
     ArrayList<String> forceCategoryCodeFireArmsWeapons = new ArrayList<>(Arrays.asList("11,12,13,14,15".split(",")));
 // ASSAULT-SIMPLE when Weapon/Force is used, one of the following URC codes is required
@@ -1081,6 +1082,6 @@ protected String getForceCategoryCode(Charge thisOffense) {
             !forceCategoryCodeWeaponViolations.contains(forceCategoryCode)) {
         forceCategoryCode = "35";
     }
-    thisOffense.cf_forceCategory = forceCategoryCode;
+    thisOffense.cf_forceCategory = forceCategoryCode;*/
     return forceCategoryCode;
 }
