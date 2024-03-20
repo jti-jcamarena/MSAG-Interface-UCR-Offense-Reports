@@ -106,7 +106,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     String nIBRSReportCategoryCode = "GROUP B ARREST REPORT";
     String personResidentCode = "R";
 
-    int maxAgeRange = 50; //default value
+    int maxAgeRange = 25; //default value
     int minAgeRange = 20; //default value
 
 // Charges to submit
@@ -311,7 +311,7 @@ protected Integer getAge(Party party) {
 protected String getGenderCode(Party party) {
     def gender = party.person.collect("profiles[gender != null].gender").find({ it -> it != null });
     if (gender == null || !["MALE", "FEMALE"].contains(gender)) {
-        gender = "U";
+        gender = "M";
     } else if (gender == "MALE") {
         gender = "M";
     } else if (gender == "FEMALE") {
@@ -323,7 +323,7 @@ protected String getGenderCode(Party party) {
 protected String getEthnicity(Party party) {
     def ethnicity = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
     if (ethnicity == null) {
-        ethnicity = "U";
+        ethnicity = "N";
     } else if (ethnicity == "HISPANIC") {
         ethnicity = "H";
     } else {
@@ -335,7 +335,7 @@ protected String getEthnicity(Party party) {
 protected String getRace(Party party) {
     def race = party.person.collect("profiles[ethnicity != null].ethnicity").find({ it -> it != null });
     if (race == null || !["WHITE", "BLACK", "AMERICANINDIAN", "ASIAN", "NATIVEHAWAIIAN"].contains(race)) {
-        race = "U";
+        race = "W";
     } else if (race == "WHITE") {
         race = "W";
     } else if (race == "BLACK") {
