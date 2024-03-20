@@ -1,3 +1,5 @@
+import com.sustain.lookuplist.model.LookupItem
+import com.sustain.util.DateUtil
 import com.sustain.util.RichList;
 import com.sustain.properties.model.SystemProperty;
 import com.sustain.cases.model.Case;
@@ -27,6 +29,7 @@ import com.sustain.expression.Where;
 import com.sustain.DomainObject;
 import com.sustain.cases.model.Party;
 import com.sustain.person.model.Person;
+import com.sustain.lookuplist.model.LookupItem;
 
 def String defaultSocietyPerson = SystemProperty.getValue("nibrs.victim.default.society");
 def Long societyVictimID = Long.parseLong(defaultSocietyPerson);
@@ -206,13 +209,10 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
     boolean incidentReportDateIndicator = false;
     ArrayList<String> incidentExceptionalClearanceCode = new ArrayList<>(Arrays.asList("A", "B", "C", "D", "E", "N"));
 
-    LocalDate incidentExceptionalClearanceDate = LocalDate.now();
     String locationCategoryCode = "25"; //default value
     String offenseFactorCode = "N"; //default value
     String offenseFactorBiasMotivationCode = "NONE"; //default value
-    String itemCategoryNIBRSPropertyCategoryCode = "08"; //default value
     String itemValueAmount = "1"; //default value
-    String itemQuantityLoss = "00"; //default value
 
     String statutoryRapeUCR = "RAPE-STATUTORY";
     String weaponsOfMassDestruction = "WEAPONS_OF_MASS_DESTRUCTION";
@@ -276,9 +276,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
     logger.debug("Cases: ${offenses.associatedParty.case.unique({ it -> it.id })}");
     logger.debug("Charges: ${offenses}");
-
-    String victimFilterXrefChargeVictim = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null]";
-    String victimFilterXrefChargeVictimById = "xrefs[refType == 'VICTIMOF' && entityType=='Party'].ref[id != null && id == #p1]";
+//refType == 'VICTIMOF' &&
+    String victimFilterXrefChargeVictim = "xrefs[entityType=='Party'].ref[id != null]";
+    String victimFilterXrefChargeVictimById = "xrefs[entityType=='Party'].ref[id != null && id == #p1]";
 
     ArrayList<String> toEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddress?.split(",")));
     ArrayList<String> ccEmails = new ArrayList<>(Arrays.asList(ucrstatEmailAddressCC?.split(",")));
@@ -373,7 +373,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
             fileWriter.println("</nc:ActivityIdentification>");
             fileWriter.println("<nc:ActivityDate>");
             //<!-- Element 3, Incident Date and Hour 2016-02-19T10:00:00 -->
-            fileWriter.println("<nc:DateTime>${incidentDateTimeFormatted}</nc:DateTime>");
+            fileWriter.println("<nc:DateTime>${DateUtil.format(offense.chargeDate, "yyyy-MM-dd'T'hh:mm:ss")}</nc:DateTime>");
             //<!-- Element 3, Incident Date if Hour is Unknown 2016-02-19 -->
             //<!-- <nc:Date>2016-02-19</nc:Date> -->
             fileWriter.println("</nc:ActivityDate>");
@@ -396,9 +396,8 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
             //<!-- Element 5, Exceptional Clearance Date -->
             if (incidentExceptionalClearanceCodeValue != "N") {
-                //(offense.cf_indicentExceptionalClear != null && offense.cf_indicentExceptionalClear != "N" || incidentExceptionalClearanceCode[5] != "N"){
                 fileWriter.println("<j:IncidentExceptionalClearanceDate>");
-                fileWriter.println("<nc:Date>${incidentExceptionalClearanceDate}</nc:Date>");
+                fileWriter.println("<nc:Date>${DateUtil.format(offense.cf_exceptionalClearDate, "yyyy-MM-dd")}</nc:Date>");
                 fileWriter.println("</j:IncidentExceptionalClearanceDate>");
             }
             fileWriter.println("</j:IncidentAugmentation>");
@@ -484,7 +483,7 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                     fileWriter.println("</nc:ItemStatus>");
 
                     itemCategoryNIBRSPropertyCategoryCode = getItemCategoryCode(relatedOffense);
-                    if (getItemStatus(relatedOffense) != "NONE" && !isAttempted(relatedOffense)) {
+                    if (!["NONE", "UNKNOWN"].contains(getItemStatus(relatedOffense)) && !isAttempted(relatedOffense)) {
                         //<!-- Element 16, Value of Property in US Dollars -->
                         if (!Arrays.asList("09,22,48,65,66".split(",")).contains(itemCategoryNIBRSPropertyCategoryCode)) {
                             fileWriter.println("<nc:ItemValue>");
@@ -516,12 +515,14 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                     if (getOffenseUCRCode(relatedOffense) == "DRUG-NARCOTIC_VIOLATIONS" && relatedCharges.size() > 1 || getOffenseUCRCode(relatedOffense) != "DRUG-NARCOTIC_VIOLATIONS") {
                         fileWriter.println("<nc:ItemValue>");
                         fileWriter.println("<nc:ItemValueAmount>");
-                        fileWriter.println("<nc:Amount>12000</nc:Amount>");
+                        fileWriter.println("<nc:Amount>${relatedOffense.cf_itemValue != null ? relatedOffense.cf_itemValue : itemValueAmount}</nc:Amount>");
                         fileWriter.println("</nc:ItemValueAmount>");
                         //<!-- Element 17, Date Recovered -->
-//                        fileWriter.println("<!--<nc:ItemValueDate>");
-//                        fileWriter.println("<nc:Date>2024-02-09</nc:Date>");
-//                        fileWriter.println("</nc:ItemValueDate>-->");
+                        if (offense.cf_itemDateRecovered != null) {
+                            fileWriter.println("<nc:ItemValueDate>");
+                            fileWriter.println("<nc:Date>${DateUtil.format(offense.cf_itemDateRecovered, "yyyy-MM-dd")}</nc:Date>");
+                            fileWriter.println("</nc:ItemValueDate>");
+                        }
                         fileWriter.println("</nc:ItemValue>");
                     }
                     //<!-- Element 15, Property Description -->
@@ -597,11 +598,9 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
 
             for (victim in offenseVictims) {
                 def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }))
-//                logger.debug("victimURCOffenses:${victimURCOffenses}");
                 fileWriter.println("<j:Victim s:id='" + "Victim${victim.id}_${uuid}" + "'>");
                 fileWriter.println("<nc:RoleOfPerson s:ref='" + "PersonVictim${victim.id}_${uuid}" + "'/>");
                 //<!-- Element 23, Victim Sequence Number -->
-//                fileWriter.println("<j:VictimSequenceNumberText>${offenseVictimsArrayList.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
                 fileWriter.println("<j:VictimSequenceNumberText>${offenseVictims.indexOf(victim) + 1}</j:VictimSequenceNumberText>");
 
                 //TODO review victim injury type when victim related offense meets criteria
@@ -686,15 +685,19 @@ if (localDate == localDateLastDayOfMonth || internalTesting == "true") {
                 for (def Party subject in offenseSubjects) {
                     for (victim in offenseVictims) {
                         def List<String> victimURCOffenses = getUCROffenses(relatedCharges.findAll({ Charge it -> !it.collect(victimFilterXrefChargeVictimById, victim.id).isEmpty() }));
+
+                        def String victimToSubjectRelationshipCode = offense.collect("xrefs[entityType=='Party' && ref.id != null && ref.id == #p1].refType", victim.id).find({ String it -> it != null }) ?: "Stranger";
+                        def String victimToSubjectRelationshipLabel = DomainObject.find(LookupItem.class, "lookupList.name", "CASE_XREF_TYPE", "code", victimToSubjectRelationshipCode).find({ LookupItem it -> it.label != null })?.label ?: "Stranger";
+
                         fileWriter.println("<j:SubjectVictimAssociation s:id='" + "SubjectVictimAssocSP${subject.id}${victim.id}_${uuid}" + "'>");
                         fileWriter.println("<j:Subject s:ref='" + "Subject${subject.id}_${uuid}" + "'/>");
                         fileWriter.println("<j:Victim s:ref='" + "Victim${victim.id}_${uuid}" + "'/>");
                         //<!-- Element 35, Relationship(s) of Victim To Offender -->
-                        String victimToSubjectRelationshipCode = "Acquaintance";
+
                         if (Collections.disjoint(victimURCOffenses, ["INCEST"]) == false) {
-                            victimToSubjectRelationshipCode = "Family Member";
+                            victimToSubjectRelationshipLabel = "Family Member";
                         }
-                        fileWriter.println("<nibrs:VictimToSubjectRelationshipCode>${victimToSubjectRelationshipCode}</nibrs:VictimToSubjectRelationshipCode>");
+                        fileWriter.println("<nibrs:VictimToSubjectRelationshipCode>${victimToSubjectRelationshipLabel}</nibrs:VictimToSubjectRelationshipCode>");
                         fileWriter.println("</j:SubjectVictimAssociation>");
                     }
                 }
@@ -854,58 +857,6 @@ protected String getItemCategoryCode(Charge thisOffense) {
 
 protected String getItemStatus(Charge thisOffense) {
     def String itemStatus = thisOffense.cf_itemStatus == null || isAttempted(thisOffense) ? "NONE" : thisOffense.cf_itemStatus;
-//logger.debug("assign1 itemStatus:${itemStatus}");
-    if (Arrays.asList("BRIBERY,BURGLARY-BREAKING_ENTERING,KIDNAPPING-ABDUCTION,ROBBERY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        //Item Status Code must be NONE, RECOVERED, STOLEN or UNKNOWN
-//        logger.debug("assign2 itemStatus:${itemStatus}");
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
-    }
-
-    if (Arrays.asList("COUNTERFEIT-FORGERY,EXPORT_VIOLATIONS".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "COUNTERFEITED";
-//        logger.debug("assign3 itemStatus:${itemStatus}");
-    }
-
-    if (Arrays.asList("DAMAGE-DESTRUCTION-VANDALISM_OF_PROPERTY".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "DESTROYED_DAMAGED_VANDALIZED";
-//        logger.debug("assign4 itemStatus:${itemStatus}");
-    }
-
-    if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION,IDENTITY_THEFT LARCENY,LARCENY-FROM_AUTO LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
-//        logger.debug("assign5 itemStatus:${itemStatus}");
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
-    }
-
-    if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION IDENTITY_THEFT,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY,SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
-//        logger.debug("assign6 itemStatus:${itemStatus}");
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
-    }
-
-    if (!isAttempted(thisOffense) && Arrays.asList("BETTING-WAGERING,GAMBLING-OPERATING_PROMOTING_ASSISTING,GAMBLING-EQUIPMENT_VIOLATION,SPORTS_TAMPERING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "SEIZED";
-//        logger.debug("assign7 itemStatus:${itemStatus}");
-    }
-
-    // Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be NONE, RECOVERED, STOLEN or UNKNOWN
-    if (Arrays.asList("BRIBERY,BURGLARY-BREAKING_ENTERING,KIDNAPPING-ABDUCTION".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
-//        logger.debug("assign8 itemStatus:${itemStatus}");
-    }
-
-    //Offense Attempted = 'false' then the Item Status Code (Property Loss Type) must be RECOVERED or STOLEN
-    if (Arrays.asList("EMBEZZLEMENT,EXTORTION-BLACKMAIL,FRAUD-BY_WIRE,FRAUD-CREDIT_CARD-AUTOMATIC_TELLER_MACHINE,FRAUD-FALSE_PRETENSES-SWINDLE-CONFIDENCE_GAME,FRAUD-IMPERSONATION,FRAUD-WELFARE_FRAUD,HACKING-COMPUTER_INVASION,IDENTITY_THEFT,LARCENY,LARCENY-FROM_AUTO,LARCENY-FROM_BUILDING,LARCENY-FROM_COIN_OPERATED_MACHINE,LARCENY-PARTS_FROM_VEHICLE,MONEY_LAUNDERING,MOTOR_VEHICLE_THEFT,POCKET_PICKING,PURSE_SNATCHING,ROBBERY SHOPLIFTING".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "STOLEN";
-//        logger.debug("assign9 itemStatus:${itemStatus}");
-    }
-
-    if (Arrays.asList("ARSON".split(",")).contains(getOffenseUCRCode(thisOffense))) {
-        itemStatus = isAttempted(thisOffense) ? "NONE" : "BURNED";
-//        logger.debug("assign10 itemStatus:${itemStatus}");
-    }
-    thisOffense.cf_itemStatus = itemStatus;
-//    logger.debug("assign11 itemStatus:${itemStatus}");
     return itemStatus;
 }
 
@@ -1057,31 +1008,5 @@ protected List<String> getUCROffenses(List<Charge> offenses) {
 
 protected String getForceCategoryCode(Charge thisOffense) {
     def String forceCategoryCode = thisOffense.cf_forceCategory != null ? thisOffense.cf_forceCategory : "";
-/*// AGGRAVATED_ASSAULT when Weapon/Force is used, one of the following URC codes is required
-    ArrayList<String> offenseUCRCodeRequiredWhenFireArmsWeapons = new ArrayList<>(Arrays.asList("AGGRAVATED_ASSAULT".split(",")));
-    ArrayList<String> forceCategoryCodeFireArmsWeapons = new ArrayList<>(Arrays.asList("11,12,13,14,15".split(",")));
-// ASSAULT-SIMPLE when Weapon/Force is used, one of the following URC codes is required
-    ArrayList<String> offenseUCRCodeRequiredWhenNonFireArmsWeapons = new ArrayList<>(Arrays.asList("ASSAULT-SIMPLE".split(",")));
-    ArrayList<String> forceCategoryCodeNonFireArmsWeapons = new ArrayList<>(Arrays.asList("40,90,95,99".split(",")));
-
-    ArrayList<String> forceCategoryCodeWeaponViolations = new ArrayList<>(Arrays.asList("35,50,60,65,70,85".split(",")));
-
-    //Homicide Offenses
-    def ArrayList<String> homicideOffenses = Arrays.asList("MANSLAUGHTER_NONNEGLIGENT-MURDER,MANSLAUGHTER_NEGLIGENT,JUSTIFIABLE_HOMICIDE".split(","));
-
-    if (offenseUCRCodeRequiredWhenFireArmsWeapons.contains(getOffenseUCRCode(thisOffense)) &&
-            !forceCategoryCodeFireArmsWeapons.contains(forceCategoryCode)) {
-        forceCategoryCode = "11";
-    } else if (offenseUCRCodeRequiredWhenNonFireArmsWeapons.contains(getOffenseUCRCode(thisOffense)) &&
-            !forceCategoryCodeNonFireArmsWeapons.contains(forceCategoryCode)) {
-        forceCategoryCode = "40";
-    } else if (homicideOffenses.contains(getOffenseUCRCode(thisOffense)) &&
-            forceCategoryCode == "99") {
-        forceCategoryCode = "30";
-    } else if (getOffenseUCRCode(thisOffense) == "WEAPON_LAW_VIOLATIONS" &&
-            !forceCategoryCodeWeaponViolations.contains(forceCategoryCode)) {
-        forceCategoryCode = "35";
-    }
-    thisOffense.cf_forceCategory = forceCategoryCode;*/
     return forceCategoryCode;
 }
